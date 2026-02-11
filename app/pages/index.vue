@@ -1,5 +1,6 @@
 <script setup lang="ts">
 const sessionToken = useCookie('sessionToken')
+const playerId = useCookie('playerId')
 
 if (sessionToken.value) {
   await navigateTo('/lobbies')
@@ -23,7 +24,8 @@ async function handleJoin() {
   try {
     const result = await rpc.player.join({ name: trimmed })
     sessionToken.value = result.sessionToken
-    navigateTo('/lobbies')
+    playerId.value = result.player.id
+    await navigateTo('/lobbies')
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to join'
   } finally {
