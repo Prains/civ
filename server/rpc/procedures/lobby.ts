@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ORPCError } from '@orpc/server'
 import { publicProcedure, authedProcedure } from '../base'
 import { publisher } from '../publisher'
-import prisma from '../../../lib/prisma'
+import prisma from '../../utils/prisma'
 
 const get = publicProcedure
   .input(z.object({ lobbyId: z.string() }))

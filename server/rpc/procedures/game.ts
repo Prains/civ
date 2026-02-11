@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { ORPCError } from '@orpc/server'
 import { authedProcedure, publicProcedure } from '../base'
 import { publisher } from '../publisher'
-import prisma from '../../../lib/prisma'
+import prisma from '../../utils/prisma'
 
 type TerrainType = 'grass' | 'water' | 'mountain'
 

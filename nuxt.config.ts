@@ -11,7 +11,6 @@ export default defineNuxtConfig({
     '@formkit/auto-animate',
     '@pinia/colada-nuxt',
     '@pinia/nuxt',
-    '@prisma/nuxt',
     '@vueuse/nuxt'
   ],
 

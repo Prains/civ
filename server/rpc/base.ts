@@ -1,6 +1,6 @@
 import type { Player } from '../../app/generated/prisma/client'
 import { ORPCError, os } from '@orpc/server'
-import prisma from '../../lib/prisma'
+import prisma from '../utils/prisma'
 
 export interface BaseContext {
   sessionToken: string | null

@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { publicProcedure } from '../base'
-import prisma from '../../../lib/prisma'
+import prisma from '../../utils/prisma'
 
 const join = publicProcedure
   .input(z.object({ name: z.string().min(1) }))
