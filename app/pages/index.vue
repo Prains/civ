@@ -2,9 +2,10 @@
 const sessionToken = useCookie('sessionToken')
 
 if (sessionToken.value) {
-  navigateTo('/lobbies')
+  await navigateTo('/lobbies')
 }
 
+const rpc = useRpc()
 const name = ref('')
 const loading = ref(false)
 const error = ref('')
@@ -20,7 +21,6 @@ async function handleJoin() {
   error.value = ''
 
   try {
-    const rpc = useRpc()
     const result = await rpc.player.join({ name: trimmed })
     sessionToken.value = result.sessionToken
     navigateTo('/lobbies')
