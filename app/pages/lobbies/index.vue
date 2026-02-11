@@ -2,7 +2,7 @@
 const sessionToken = useCookie('sessionToken')
 
 if (!sessionToken.value) {
-  navigateTo('/')
+  await navigateTo('/')
 }
 
 const rpc = useRpc()
