@@ -9,7 +9,7 @@ export default defineNuxtPlugin(() => {
   const sessionToken = useCookie('sessionToken')
 
   const link = new RPCLink({
-    url: '/api/rpc',
+    url: `${window.location.origin}/api/rpc`,
     headers: () => {
       const token = sessionToken.value
       return token ? { 'x-session-token': token } : {}
