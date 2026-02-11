@@ -4,6 +4,21 @@ import { publicProcedure, authedProcedure } from '../base'
 import { publisher } from '../publisher'
 import prisma from '../../../lib/prisma'
 
+const get = publicProcedure
+  .input(z.object({ lobbyId: z.string() }))
+  .handler(async ({ input }) => {
+    const lobby = await prisma.lobby.findUnique({
+      where: { id: input.lobbyId },
+      include: { players: { select: { id: true, name: true } } }
+    })
+
+    if (!lobby) {
+      throw new ORPCError('NOT_FOUND', { message: 'Lobby not found' })
+    }
+
+    return lobby
+  })
+
 const list = publicProcedure
   .handler(async () => {
     const lobbies = await prisma.lobby.findMany({
@@ -105,6 +120,7 @@ const subscribe = publicProcedure
   })
 
 export const lobbyRouter = {
+  get,
   list,
   create,
   join,
