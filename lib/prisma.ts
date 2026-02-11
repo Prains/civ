@@ -1,8 +1,11 @@
 import { PrismaClient } from '~/generated/prisma/client'
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
 
 const prismaClientSingleton = () => {
-  // @ts-expect-error -- Prisma v7 generated type requires options but runtime allows empty call
-  return new PrismaClient()
+  const adapter = new PrismaBetterSqlite3({
+    url: process.env.DATABASE_URL || 'file:./prisma/dev.db'
+  })
+  return new PrismaClient({ adapter })
 }
 
 // eslint-disable-next-line no-shadow-restricted-names

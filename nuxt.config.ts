@@ -15,6 +15,8 @@ export default defineNuxtConfig({
     '@vueuse/nuxt'
   ],
 
+  ssr: false,
+
   devtools: {
     enabled: true
   },
