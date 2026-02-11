@@ -34,8 +34,6 @@
     "nuxt": "^4.3.1",
     "pixi.js": "^8.16.0",
     "tailwindcss": "^4.1.18",
-    "vue3-pixi": "^1.0.0-beta.6",
-    "vue3-pixi-nuxt": "^1.0.0-beta.6",
     "zod": "^4.3.6"
   },
   "devDependencies": {

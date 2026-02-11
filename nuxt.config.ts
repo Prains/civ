@@ -12,8 +12,7 @@ export default defineNuxtConfig({
     '@pinia/colada-nuxt',
     '@pinia/nuxt',
     '@prisma/nuxt',
-    '@vueuse/nuxt',
-    'vue3-pixi-nuxt'
+    '@vueuse/nuxt'
   ],
 
   devtools: {

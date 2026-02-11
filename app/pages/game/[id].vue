@@ -3,7 +3,7 @@ const route = useRoute()
 const sessionToken = useCookie('sessionToken')
 
 if (!sessionToken.value) {
-  navigateTo('/')
+  await navigateTo('/')
 }
 
 const gameId = route.params.id as string

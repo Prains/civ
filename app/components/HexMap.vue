@@ -74,7 +74,7 @@ onMounted(async () => {
   app.stage.addChild(g)
 
   onBeforeUnmount(() => {
-    app.destroy(true)
+    app.destroy({ removeView: true })
   })
 })
 </script>
