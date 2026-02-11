@@ -62,21 +62,21 @@ const start = authedProcedure
 
 const subscribe = publicProcedure
   .input(z.object({ gameId: z.string() }))
-  .handler(async function* ({ input }) {
-    const iterator = publisher.subscribe(`game:${input.gameId}`)
-
+  .handler(async function* ({ input, signal }) {
     const game = await prisma.game.findUnique({
       where: { id: input.gameId }
     })
 
     if (game) {
-      publisher.publish(`game:${input.gameId}`, {
-        type: 'mapReady',
+      yield {
+        type: 'mapReady' as const,
         mapData: JSON.parse(game.mapData)
-      })
+      }
     }
 
-    yield* iterator
+    for await (const event of publisher.subscribe(`game:${input.gameId}`, { signal })) {
+      yield event
+    }
   })
 
 export const gameRouter = {
