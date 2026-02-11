@@ -1,7 +1,7 @@
 import { RPCHandler } from '@orpc/server/fetch'
 import { toWebRequest } from 'h3'
 import { router } from '../../rpc/router'
-import type { BaseContext } from '../../rpc/router'
+import type { BaseContext } from '../../rpc/base'
 
 const handler = new RPCHandler(router)
 

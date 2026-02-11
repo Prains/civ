@@ -1,16 +1,12 @@
 import { EventPublisher } from '@orpc/server'
 
-export interface LobbyEvent {
-  type: 'playerJoined' | 'playerLeft' | 'gameStarted'
-  lobbyId: string
-  playerId?: string
-  playerName?: string
-}
+export type LobbyEvent
+  = | { type: 'playerJoined', player: { id: string, name: string } }
+    | { type: 'playerLeft', playerId: string }
+    | { type: 'gameStarted', gameId: string }
 
-export interface GameEvent {
-  type: 'mapReady'
-  gameId: string
-}
+export type GameEvent
+  = | { type: 'mapReady', mapData: { tiles: Array<{ q: number, r: number, type: string }> } }
 
 type Channels = Record<`lobby:${string}`, LobbyEvent> & Record<`game:${string}`, GameEvent>
 
