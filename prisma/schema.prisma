@@ -10,18 +10,28 @@ datasource db {
   provider = "sqlite"
 }
 
-model User {
-  id    Int     @id @default(autoincrement())
-  email String  @unique
-  name  String?
-  posts Post[]
+model Player {
+  id           String   @id @default(cuid())
+  name         String
+  sessionToken String   @unique @default(cuid())
+  lobbyId      String?
+  lobby        Lobby?   @relation(fields: [lobbyId], references: [id])
+  createdAt    DateTime @default(now())
 }
 
-model Post {
-  id        Int     @id @default(autoincrement())
-  title     String
-  content   String?
-  published Boolean @default(false)
-  author    User    @relation(fields: [authorId], references: [id])
-  authorId  Int
+model Lobby {
+  id        String   @id @default(cuid())
+  hostId    String
+  status    String   @default("waiting") // waiting | playing
+  createdAt DateTime @default(now())
+  players   Player[]
+  game      Game?
+}
+
+model Game {
+  id        String   @id @default(cuid())
+  lobbyId   String   @unique
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id])
+  mapData   String   // JSON: { tiles: [{q, r, type}] }
+  createdAt DateTime @default(now())
 }
