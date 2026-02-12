@@ -3,6 +3,9 @@ import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js'
 import type { HexMapData } from '~/utils/hex-map-data'
 import { createHexTextureAtlas, type HexTextureAtlas } from '~/utils/hex-texture-atlas'
 import { createTilePool, type TilePool } from '~/utils/hex-tile-pool'
+import { createShadowPool, type ShadowPool } from '~/utils/hex-shadow'
+import { createFeaturePool, type FeaturePool } from '~/utils/hex-feature-pool'
+import { createWaterAnimator, type WaterAnimator } from '~/utils/hex-water-animator'
 
 const props = defineProps<{
   mapData: HexMapData
@@ -39,20 +42,20 @@ onMounted(async () => {
   const worldContainer = new Container({ isRenderGroup: true })
   app.stage.addChild(worldContainer)
 
-  // Layer 1: shadow container (placeholder for Task 4)
-  const shadowContainer = new Container()
-  worldContainer.addChild(shadowContainer)
+  // Layer 1: shadow pool (below tiles)
+  const shadowPool: ShadowPool = createShadowPool()
+  worldContainer.addChild(shadowPool.container)
 
   // Layer 2: tile sprites from pool
   worldContainer.addChild(tilePool.tileContainer)
 
-  // Layer 3: feature container (placeholder for Task 5)
-  const featureContainer = new Container({ sortableChildren: true })
-  worldContainer.addChild(featureContainer)
+  // Layer 3: feature pool (above tiles)
+  const featurePool: FeaturePool = createFeaturePool()
+  worldContainer.addChild(featurePool.container)
 
-  // Layer 4: water overlay container (placeholder for Task 5)
-  const waterOverlayContainer = new Container()
-  worldContainer.addChild(waterOverlayContainer)
+  // Water animator
+  const waterAnimator: WaterAnimator = createWaterAnimator()
+  let frameCount = 0
 
   // Layer 5: LOD fallback graphics (hidden by default)
   const lodGraphics = new Graphics()
@@ -101,9 +104,8 @@ onMounted(async () => {
     if (useLod) {
       // LOD mode: hide sprites, show colored rectangles
       tilePool.tileContainer.visible = false
-      shadowContainer.visible = false
-      featureContainer.visible = false
-      waterOverlayContainer.visible = false
+      shadowPool.container.visible = false
+      featurePool.container.visible = false
       lodGraphics.visible = true
 
       lodGraphics.clear()
@@ -122,12 +124,19 @@ onMounted(async () => {
     } else {
       // Sprite mode: show tile pool, hide LOD
       tilePool.tileContainer.visible = true
-      shadowContainer.visible = true
-      featureContainer.visible = true
-      waterOverlayContainer.visible = true
+      shadowPool.container.visible = true
       lodGraphics.visible = false
 
       tilePool.update(range, props.mapData, textureAtlas, camera.zoom)
+      shadowPool.update(range, props.mapData)
+
+      // Features visible at zoom >= 0.4
+      if (camera.zoom >= 0.4) {
+        featurePool.container.visible = true
+        featurePool.update(range, props.mapData)
+      } else {
+        featurePool.container.visible = false
+      }
     }
   }
 
@@ -135,6 +144,12 @@ onMounted(async () => {
     const dt = ticker.deltaTime / 60 // normalize to seconds
     updateCamera(dt)
     redrawVisibleTiles()
+    frameCount++
+
+    // Water animation (runs even without visible range change)
+    if (camera.zoom >= 0.25) {
+      waterAnimator.update(frameCount, tilePool, props.mapData, textureAtlas)
+    }
 
     // Update FPS every 0.5s
     fpsUpdateTimer += dt
@@ -146,6 +161,9 @@ onMounted(async () => {
 
   cleanup = () => {
     destroyCamera()
+    waterAnimator.destroy()
+    featurePool.destroy()
+    shadowPool.destroy()
     tilePool.destroy()
     textureAtlas.destroy()
     app.destroy({ removeView: true })

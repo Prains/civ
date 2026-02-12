@@ -1,7 +1,8 @@
 import { Container, Sprite, type Texture } from 'pixi.js'
 import type { HexMapData, VisibleRange, TerrainId } from '~/utils/hex-map-data'
-import { getTerrain, HEX_SIZE, SQRT3 } from '~/utils/hex-map-data'
+import { getTerrain, getElevation, HEX_SIZE, SQRT3 } from '~/utils/hex-map-data'
 import type { HexTextureAtlas } from '~/utils/hex-texture-atlas'
+import { elevationYOffset, calculateLightTint } from '~/utils/hex-lighting'
 
 export interface TilePoolEntry {
   sprite: Sprite
@@ -93,10 +94,13 @@ export function createTilePool(initialCapacity: number = 2000): TilePool {
 
         const sprite = acquireSprite()
         sprite.texture = texture
-        sprite.tint = 0xffffff
+
+        const elev = getElevation(mapData, q, r)
+        const yOffset = elevationYOffset(elev)
         sprite.x = HEX_SIZE * 1.5 * q
-        sprite.y = HEX_SIZE * (SQRT3 / 2 * q + SQRT3 * r)
-        sprite.zIndex = r * 1000
+        sprite.y = HEX_SIZE * (SQRT3 / 2 * q + SQRT3 * r) + yOffset
+        sprite.zIndex = r * 1000 + Math.floor(elev / 25)
+        sprite.tint = calculateLightTint(mapData, q, r)
 
         const entry: TilePoolEntry = { sprite, q, r }
         activeTiles.set(key, entry)

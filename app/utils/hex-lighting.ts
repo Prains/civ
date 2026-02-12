@@ -2,7 +2,7 @@ import type { HexMapData } from './hex-map-data'
 import { getElevation, getElevationSafe } from './hex-map-data'
 
 const ELEVATION_SCALE = 8
-const LAND_THRESHOLD = 97  // ~0.38 * 255
+const LAND_THRESHOLD = 97 // ~0.38 * 255
 
 // Light direction: from upper-left (NW)
 const LIGHT_NEIGHBORS: [number, number][] = [[-1, -1], [0, -1], [-1, 0]]
@@ -14,7 +14,7 @@ export function elevationYOffset(elevation: number): number {
 
 export function calculateLightTint(map: HexMapData, q: number, r: number): number {
   const elev = getElevation(map, q, r)
-  if (elev < LAND_THRESHOLD) return 0xffffff  // No shading for water
+  if (elev < LAND_THRESHOLD) return 0xffffff // No shading for water
 
   // Average elevation difference toward light
   let lightDiff = 0
@@ -33,5 +33,5 @@ export function calculateLightTint(map: HexMapData, q: number, r: number): numbe
 }
 
 export function shouldCastShadow(terrainId: number): boolean {
-  return terrainId >= 7  // hills, mountain, snow
+  return terrainId >= 7 // hills, mountain, snow
 }
