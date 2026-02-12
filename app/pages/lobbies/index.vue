@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data: session } = authClient.useSession()
+const session = authClient.useSession()
 const { data: lobbies, isPending: loading } = useListLobbies()
 const { mutateAsync: createLobbyAsync, isLoading: creating } = useCreateLobby()
 const { mutateAsync: joinLobbyAsync } = useJoinLobby()
@@ -27,8 +27,8 @@ async function handleSignOut() {
         <h1 class="text-2xl font-bold">
           Lobbies
         </h1>
-        <UBadge v-if="session?.user" variant="subtle">
-          {{ session.user.name }}
+        <UBadge v-if="session.data?.user" variant="subtle">
+          {{ session.data.user.name }}
         </UBadge>
       </div>
       <div class="flex gap-2">

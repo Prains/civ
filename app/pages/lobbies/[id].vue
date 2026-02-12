@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { data: session } = authClient.useSession()
+const session = authClient.useSession()
 
 const route = useRoute()
 const lobbyId = route.params.id as string
@@ -58,7 +58,7 @@ async function handleLeave() {
   await navigateTo('/lobbies')
 }
 
-const isHost = computed(() => session.value?.user.id === hostId.value)
+const isHost = computed(() => session.value.data?.user.id === hostId.value)
 
 onMounted(() => {
   subscribeToLobby()
