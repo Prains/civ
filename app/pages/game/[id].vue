@@ -1,11 +1,5 @@
 <script setup lang="ts">
 const route = useRoute()
-const sessionToken = useCookie('sessionToken')
-
-if (!sessionToken.value) {
-  await navigateTo('/')
-}
-
 const gameId = route.params.id as string
 
 interface Tile {

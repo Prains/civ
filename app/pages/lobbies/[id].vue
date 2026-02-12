@@ -1,10 +1,5 @@
 <script setup lang="ts">
-const sessionToken = useCookie('sessionToken')
-const playerId = useCookie('playerId')
-
-if (!sessionToken.value) {
-  await navigateTo('/')
-}
+const { data: session } = authClient.useSession()
 
 const route = useRoute()
 const lobbyId = route.params.id as string
@@ -14,7 +9,6 @@ const { data: lobby, isPending: loading } = useGetLobby(lobbyId)
 const players = ref<Array<{ id: string, name: string }>>([])
 const hostId = ref('')
 
-// Sync query data to local refs (SSE will update them in real-time)
 watch(lobby, (val) => {
   if (val) {
     hostId.value = val.hostId
@@ -22,7 +16,6 @@ watch(lobby, (val) => {
   }
 }, { immediate: true })
 
-// SSE subscription — stays imperative
 const client = useRpcClient()
 const abortController = new AbortController()
 
@@ -65,7 +58,7 @@ async function handleLeave() {
   await navigateTo('/lobbies')
 }
 
-const isHost = computed(() => playerId.value === hostId.value)
+const isHost = computed(() => session.value?.user.id === hostId.value)
 
 onMounted(() => {
   subscribeToLobby()

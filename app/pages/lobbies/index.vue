@@ -1,14 +1,7 @@
 <script setup lang="ts">
-const sessionToken = useCookie('sessionToken')
-
-if (!sessionToken.value) {
-  await navigateTo('/')
-}
-
+const { data: session } = authClient.useSession()
 const { data: lobbies, isPending: loading } = useListLobbies()
-
 const { mutateAsync: createLobbyAsync, isLoading: creating } = useCreateLobby()
-
 const { mutateAsync: joinLobbyAsync } = useJoinLobby()
 
 async function createLobby() {
@@ -20,20 +13,38 @@ async function joinLobby(lobbyId: string) {
   await joinLobbyAsync({ lobbyId })
   await navigateTo(`/lobbies/${lobbyId}`)
 }
+
+async function handleSignOut() {
+  await authClient.signOut()
+  await navigateTo('/auth/sign-in')
+}
 </script>
 
 <template>
   <div class="mx-auto max-w-2xl p-6">
     <div class="mb-6 flex items-center justify-between">
-      <h1 class="text-2xl font-bold">
-        Lobbies
-      </h1>
-      <UButton
-        icon="i-lucide-plus"
-        label="Create Lobby"
-        :loading="creating"
-        @click="createLobby"
-      />
+      <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold">
+          Lobbies
+        </h1>
+        <UBadge v-if="session?.user" variant="subtle">
+          {{ session.user.name }}
+        </UBadge>
+      </div>
+      <div class="flex gap-2">
+        <UButton
+          icon="i-lucide-plus"
+          label="Create Lobby"
+          :loading="creating"
+          @click="createLobby"
+        />
+        <UButton
+          icon="i-lucide-log-out"
+          color="neutral"
+          variant="ghost"
+          @click="handleSignOut"
+        />
+      </div>
     </div>
 
     <div
