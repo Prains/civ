@@ -74,7 +74,7 @@ onUnmounted(() => {
     <div class="mb-6 flex items-center justify-between">
       <div>
         <h1 class="text-2xl font-bold">
-          Lobby Room
+          Комната лобби
         </h1>
         <p class="text-sm text-neutral-500">
           {{ lobbyId.slice(0, 8) }}
@@ -84,12 +84,12 @@ onUnmounted(() => {
         <UButton
           v-if="isHost"
           icon="i-lucide-play"
-          label="Start Game"
+          label="Начать игру"
           @click="handleStart"
         />
         <UButton
           icon="i-lucide-log-out"
-          label="Leave"
+          label="Выйти"
           color="neutral"
           variant="outline"
           @click="handleLeave"
@@ -101,7 +101,7 @@ onUnmounted(() => {
       <template #header>
         <div class="flex items-center justify-between">
           <h2 class="font-semibold">
-            Players
+            Игроки
           </h2>
           <UBadge variant="subtle">
             {{ players.length }}
@@ -123,7 +123,7 @@ onUnmounted(() => {
         v-else-if="players.length === 0"
         class="py-4 text-center text-neutral-500"
       >
-        Waiting for players...
+        Ожидание игроков...
       </div>
 
       <LobbyPlayerList

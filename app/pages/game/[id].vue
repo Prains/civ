@@ -33,7 +33,7 @@ onMounted(async () => {
     }
   } catch (e: unknown) {
     if (controller.signal.aborted) return
-    error.value = e instanceof Error ? e.message : 'Connection lost'
+    error.value = e instanceof Error ? e.message : 'Соединение потеряно'
     loading.value = false
   }
 })
@@ -42,7 +42,7 @@ onMounted(async () => {
 <template>
   <div class="flex flex-col items-center gap-4 p-4">
     <h1 class="text-2xl font-bold">
-      Game
+      Игра
     </h1>
 
     <div
@@ -60,7 +60,7 @@ onMounted(async () => {
         name="i-lucide-loader-2"
         class="animate-spin"
       />
-      <span>Loading map...</span>
+      <span>Загрузка карты...</span>
     </div>
 
     <ClientOnly v-else>

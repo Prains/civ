@@ -17,7 +17,7 @@ const get = publicProcedure
     })
 
     if (!lobby) {
-      throw new ORPCError('NOT_FOUND', { message: 'Lobby not found' })
+      throw new ORPCError('NOT_FOUND', { message: 'Лобби не найдено' })
     }
 
     return {
@@ -54,7 +54,7 @@ const create = authedProcedure
     })
 
     if (existingMembership) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Already in a lobby' })
+      throw new ORPCError('BAD_REQUEST', { message: 'Вы уже в лобби' })
     }
 
     const lobby = await prisma.$transaction(async (tx) => {
@@ -95,7 +95,7 @@ const join = authedProcedure
     })
 
     if (existingMembership) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Already in a lobby' })
+      throw new ORPCError('BAD_REQUEST', { message: 'Вы уже в лобби' })
     }
 
     const lobby = await prisma.lobby.findUnique({
@@ -103,7 +103,7 @@ const join = authedProcedure
     })
 
     if (!lobby || lobby.status !== 'waiting') {
-      throw new ORPCError('NOT_FOUND', { message: 'Lobby not found or not accepting players' })
+      throw new ORPCError('NOT_FOUND', { message: 'Лобби не найдено или не принимает игроков' })
     }
 
     await prisma.lobbyMember.create({
@@ -127,7 +127,7 @@ const leave = authedProcedure
     })
 
     if (!membership) {
-      throw new ORPCError('BAD_REQUEST', { message: 'Not in a lobby' })
+      throw new ORPCError('BAD_REQUEST', { message: 'Вы не в лобби' })
     }
 
     const lobbyId = membership.lobbyId

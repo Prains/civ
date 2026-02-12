@@ -27,15 +27,15 @@ const start = authedProcedure
     })
 
     if (!lobby) {
-      throw new ORPCError('NOT_FOUND', { message: 'Lobby not found' })
+      throw new ORPCError('NOT_FOUND', { message: 'Лобби не найдено' })
     }
 
     if (lobby.hostId !== context.user.id) {
-      throw new ORPCError('FORBIDDEN', { message: 'Only the host can start the game' })
+      throw new ORPCError('FORBIDDEN', { message: 'Только хост может начать игру' })
     }
 
     if (lobby.status !== 'waiting') {
-      throw new ORPCError('CONFLICT', { message: 'Game already started' })
+      throw new ORPCError('CONFLICT', { message: 'Игра уже началась' })
     }
 
     const mapData = generateMap()

@@ -6,30 +6,30 @@ const fields: AuthFormField[] = [
   {
     name: 'name',
     type: 'text',
-    label: 'Name',
-    placeholder: 'Your name',
+    label: 'Имя',
+    placeholder: 'Ваше имя',
     required: true
   },
   {
     name: 'email',
     type: 'email',
-    label: 'Email',
+    label: 'Эл. почта',
     placeholder: 'you@example.com',
     required: true
   },
   {
     name: 'password',
     type: 'password',
-    label: 'Password',
-    placeholder: 'Min 8 characters',
+    label: 'Пароль',
+    placeholder: 'Мин. 8 символов',
     required: true
   }
 ]
 
 const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Invalid email'),
-  password: z.string().min(8, 'At least 8 characters')
+  name: z.string().min(1, 'Введите имя'),
+  email: z.string().email('Некорректный email'),
+  password: z.string().min(8, 'Минимум 8 символов')
 })
 
 type Schema = z.output<typeof schema>
@@ -46,7 +46,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   })
 
   if (authError) {
-    error.value = authError.message ?? 'Sign up failed'
+    error.value = authError.message ?? 'Ошибка регистрации'
     return
   }
 
@@ -60,19 +60,19 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <UAuthForm
         :fields="fields"
         :schema="schema"
-        :submit="{ label: 'Sign Up' }"
-        title="Create an account"
+        :submit="{ label: 'Зарегистрироваться' }"
+        title="Создать аккаунт"
         icon="i-lucide-user-plus"
         loading-auto
         @submit="onSubmit"
       >
         <template #description>
-          Already have an account?
+          Уже есть аккаунт?
           <ULink
             to="/auth/sign-in"
             class="text-primary font-medium"
           >
-            Sign in
+            Войти
           </ULink>.
         </template>
 

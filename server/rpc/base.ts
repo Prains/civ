@@ -20,7 +20,7 @@ export const authedProcedure = publicProcedure.use(async ({ context, next }) => 
   })
 
   if (!session) {
-    throw new ORPCError('UNAUTHORIZED', { message: 'Not authenticated' })
+    throw new ORPCError('UNAUTHORIZED', { message: 'Необходима авторизация' })
   }
 
   return next({ context: { user: session.user, session: session.session } })

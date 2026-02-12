@@ -25,7 +25,7 @@ async function handleSignOut() {
     <div class="mb-6 flex items-center justify-between">
       <div class="flex items-center gap-3">
         <h1 class="text-2xl font-bold">
-          Lobbies
+          Лобби
         </h1>
         <UBadge
           v-if="session.data?.user"
@@ -37,7 +37,7 @@ async function handleSignOut() {
       <div class="flex gap-2">
         <UButton
           icon="i-lucide-plus"
-          label="Create Lobby"
+          label="Создать лобби"
           :loading="creating"
           @click="createLobby"
         />
@@ -64,7 +64,7 @@ async function handleSignOut() {
       v-else-if="(lobbies ?? []).length === 0"
       class="py-12 text-center text-neutral-500"
     >
-      No lobbies available. Create one to get started.
+      Нет доступных лобби. Создайте своё, чтобы начать.
     </div>
 
     <div
@@ -80,14 +80,14 @@ async function handleSignOut() {
         <div class="flex items-center justify-between">
           <div>
             <p class="font-medium">
-              Lobby
+              Лобби
             </p>
             <p class="text-sm text-neutral-500">
               {{ lobby.id.slice(0, 8) }}
             </p>
           </div>
           <UBadge variant="subtle">
-            {{ lobby.playerCount }} {{ lobby.playerCount === 1 ? 'player' : 'players' }}
+            {{ lobby.playerCount }} {{ lobby.playerCount === 1 ? 'игрок' : lobby.playerCount < 5 ? 'игрока' : 'игроков' }}
           </UBadge>
         </div>
       </UCard>

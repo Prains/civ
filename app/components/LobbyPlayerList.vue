@@ -23,7 +23,7 @@ const props = defineProps<{
         color="primary"
         variant="subtle"
       >
-        Host
+        Хост
       </UBadge>
     </li>
   </ul>

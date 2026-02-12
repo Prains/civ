@@ -7,13 +7,13 @@ useHead({
     { rel: 'icon', href: '/favicon.ico' }
   ],
   htmlAttrs: {
-    lang: 'en'
+    lang: 'ru'
   }
 })
 
 useSeoMeta({
   title: 'Civ',
-  description: 'Multiplayer civilization game'
+  description: 'Многопользовательская игра-цивилизация'
 })
 </script>
 

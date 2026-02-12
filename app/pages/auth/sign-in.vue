@@ -6,22 +6,22 @@ const fields: AuthFormField[] = [
   {
     name: 'email',
     type: 'email',
-    label: 'Email',
+    label: 'Эл. почта',
     placeholder: 'you@example.com',
     required: true
   },
   {
     name: 'password',
     type: 'password',
-    label: 'Password',
-    placeholder: 'Enter your password',
+    label: 'Пароль',
+    placeholder: 'Введите пароль',
     required: true
   }
 ]
 
 const schema = z.object({
-  email: z.string().email('Invalid email'),
-  password: z.string().min(1, 'Password is required')
+  email: z.string().email('Некорректный email'),
+  password: z.string().min(1, 'Введите пароль')
 })
 
 type Schema = z.output<typeof schema>
@@ -37,7 +37,7 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
   })
 
   if (authError) {
-    error.value = authError.message ?? 'Invalid credentials'
+    error.value = authError.message ?? 'Неверные данные для входа'
     return
   }
 
@@ -51,19 +51,19 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
       <UAuthForm
         :fields="fields"
         :schema="schema"
-        :submit="{ label: 'Sign In' }"
-        title="Welcome back!"
+        :submit="{ label: 'Войти' }"
+        title="С возвращением!"
         icon="i-lucide-lock"
         loading-auto
         @submit="onSubmit"
       >
         <template #description>
-          Don't have an account?
+          Нет аккаунта?
           <ULink
             to="/auth/sign-up"
             class="text-primary font-medium"
           >
-            Sign up
+            Зарегистрироваться
           </ULink>.
         </template>
 
