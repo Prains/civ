@@ -1,5 +1,6 @@
-import type { RpcClient } from '../plugins/rpc.client'
-
-export function useRpc(): RpcClient {
-  return useNuxtApp().$rpc as RpcClient
+/**
+ * @deprecated Use `useORPC()` for reactive queries/mutations, or `useRpcClient()` for imperative calls.
+ */
+export function useRpc() {
+  return useRpcClient()
 }

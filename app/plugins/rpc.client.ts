@@ -1,9 +1,6 @@
-import type { RouterClient } from '@orpc/server'
 import { createORPCClient } from '@orpc/client'
 import { RPCLink } from '@orpc/client/fetch'
-import type { router } from '../../server/rpc/router'
-
-export type RpcClient = RouterClient<typeof router>
+import type { RpcClient } from '~/utils/rpc'
 
 export default defineNuxtPlugin(() => {
   const sessionToken = useCookie('sessionToken')
