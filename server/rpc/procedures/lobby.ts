@@ -9,61 +9,92 @@ const get = publicProcedure
   .handler(async ({ input }) => {
     const lobby = await prisma.lobby.findUnique({
       where: { id: input.lobbyId },
-      include: { players: { select: { id: true, name: true } } }
+      include: {
+        members: {
+          include: { user: { select: { id: true, name: true } } }
+        }
+      }
     })
 
     if (!lobby) {
       throw new ORPCError('NOT_FOUND', { message: 'Lobby not found' })
     }
 
-    return lobby
+    return {
+      id: lobby.id,
+      hostId: lobby.hostId,
+      status: lobby.status,
+      createdAt: lobby.createdAt,
+      players: lobby.members.map(m => ({ id: m.user.id, name: m.user.name }))
+    }
   })
 
 const list = publicProcedure
   .handler(async () => {
     const lobbies = await prisma.lobby.findMany({
       where: { status: 'waiting' },
-      include: { _count: { select: { players: true } } },
+      include: { _count: { select: { members: true } } },
       orderBy: { createdAt: 'desc' }
     })
 
     return lobbies.map(lobby => ({
       id: lobby.id,
       hostId: lobby.hostId,
-      playerCount: lobby._count.players,
+      playerCount: lobby._count.members,
       createdAt: lobby.createdAt
     }))
   })
 
 const create = authedProcedure
   .handler(async ({ context }) => {
-    const { player } = context
+    const { user } = context
 
-    if (player.lobbyId) {
+    const existingMembership = await prisma.lobbyMember.findFirst({
+      where: { userId: user.id, lobby: { status: 'waiting' } }
+    })
+
+    if (existingMembership) {
       throw new ORPCError('BAD_REQUEST', { message: 'Already in a lobby' })
     }
 
-    const lobby = await prisma.lobby.create({
-      data: { hostId: player.id }
+    const lobby = await prisma.$transaction(async (tx) => {
+      const created = await tx.lobby.create({
+        data: { hostId: user.id }
+      })
+
+      await tx.lobbyMember.create({
+        data: { lobbyId: created.id, userId: user.id }
+      })
+
+      return tx.lobby.findUniqueOrThrow({
+        where: { id: created.id },
+        include: {
+          members: {
+            include: { user: { select: { id: true, name: true } } }
+          }
+        }
+      })
     })
 
-    await prisma.player.update({
-      where: { id: player.id },
-      data: { lobbyId: lobby.id }
-    })
-
-    return prisma.lobby.findUniqueOrThrow({
-      where: { id: lobby.id },
-      include: { players: { select: { id: true, name: true } } }
-    })
+    return {
+      id: lobby.id,
+      hostId: lobby.hostId,
+      status: lobby.status,
+      createdAt: lobby.createdAt,
+      players: lobby.members.map(m => ({ id: m.user.id, name: m.user.name }))
+    }
   })
 
 const join = authedProcedure
   .input(z.object({ lobbyId: z.string() }))
   .handler(async ({ input, context }) => {
-    const { player } = context
+    const { user } = context
 
-    if (player.lobbyId) {
+    const existingMembership = await prisma.lobbyMember.findFirst({
+      where: { userId: user.id, lobby: { status: 'waiting' } }
+    })
+
+    if (existingMembership) {
       throw new ORPCError('BAD_REQUEST', { message: 'Already in a lobby' })
     }
 
@@ -75,14 +106,13 @@ const join = authedProcedure
       throw new ORPCError('NOT_FOUND', { message: 'Lobby not found or not accepting players' })
     }
 
-    await prisma.player.update({
-      where: { id: player.id },
-      data: { lobbyId: input.lobbyId }
+    await prisma.lobbyMember.create({
+      data: { lobbyId: input.lobbyId, userId: user.id }
     })
 
     publisher.publish(`lobby:${input.lobbyId}`, {
       type: 'playerJoined',
-      player: { id: player.id, name: player.name }
+      player: { id: user.id, name: user.name }
     })
 
     return { success: true }
@@ -90,22 +120,25 @@ const join = authedProcedure
 
 const leave = authedProcedure
   .handler(async ({ context }) => {
-    const { player } = context
+    const { user } = context
 
-    if (!player.lobbyId) {
+    const membership = await prisma.lobbyMember.findFirst({
+      where: { userId: user.id, lobby: { status: 'waiting' } }
+    })
+
+    if (!membership) {
       throw new ORPCError('BAD_REQUEST', { message: 'Not in a lobby' })
     }
 
-    const lobbyId = player.lobbyId
+    const lobbyId = membership.lobbyId
 
-    await prisma.player.update({
-      where: { id: player.id },
-      data: { lobbyId: null }
+    await prisma.lobbyMember.delete({
+      where: { id: membership.id }
     })
 
     publisher.publish(`lobby:${lobbyId}`, {
       type: 'playerLeft',
-      playerId: player.id
+      playerId: user.id
     })
 
     return { success: true }
