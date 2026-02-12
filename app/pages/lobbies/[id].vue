@@ -7,27 +7,28 @@ if (!sessionToken.value) {
 }
 
 const route = useRoute()
-const rpc = useRpc()
 const lobbyId = route.params.id as string
+
+const { data: lobby, isPending: loading } = useGetLobby(lobbyId)
 
 const players = ref<Array<{ id: string, name: string }>>([])
 const hostId = ref('')
-const loading = ref(true)
-const abortController = new AbortController()
 
-async function fetchLobby() {
-  try {
-    const lobby = await rpc.lobby.get({ lobbyId })
-    hostId.value = lobby.hostId
-    players.value = lobby.players
-  } finally {
-    loading.value = false
+// Sync query data to local refs (SSE will update them in real-time)
+watch(lobby, (val) => {
+  if (val) {
+    hostId.value = val.hostId
+    players.value = val.players
   }
-}
+}, { immediate: true })
+
+// SSE subscription — stays imperative
+const client = useRpcClient()
+const abortController = new AbortController()
 
 async function subscribeToLobby() {
   try {
-    const iterator = await rpc.lobby.subscribe(
+    const iterator = await client.lobby.subscribe(
       { lobbyId },
       { signal: abortController.signal }
     )
@@ -51,20 +52,22 @@ async function subscribeToLobby() {
   }
 }
 
-async function startGame() {
-  const result = await rpc.game.start({ lobbyId })
+const { mutateAsync: startGameAsync } = useStartGame()
+const { mutateAsync: leaveLobbyAsync } = useLeaveLobby()
+
+async function handleStart() {
+  const result = await startGameAsync({ lobbyId })
   await navigateTo(`/game/${result.gameId}`)
 }
 
-async function leaveLobby() {
-  await rpc.lobby.leave()
+async function handleLeave() {
+  await leaveLobbyAsync()
   await navigateTo('/lobbies')
 }
 
 const isHost = computed(() => playerId.value === hostId.value)
 
 onMounted(() => {
-  fetchLobby()
   subscribeToLobby()
 })
 
@@ -89,14 +92,14 @@ onUnmounted(() => {
           v-if="isHost"
           icon="i-lucide-play"
           label="Start Game"
-          @click="startGame"
+          @click="handleStart"
         />
         <UButton
           icon="i-lucide-log-out"
           label="Leave"
           color="neutral"
           variant="outline"
-          @click="leaveLobby"
+          @click="handleLeave"
         />
       </div>
     </div>
