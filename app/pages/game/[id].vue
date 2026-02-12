@@ -13,7 +13,6 @@ const loading = ref(true)
 const error = ref('')
 
 onMounted(async () => {
-  const client = useRpcClient()
   const controller = new AbortController()
 
   onBeforeUnmount(() => {
@@ -21,7 +20,7 @@ onMounted(async () => {
   })
 
   try {
-    const iterator = await client.game.subscribe({ gameId }, {
+    const iterator = await rpcClient.game.subscribe({ gameId }, {
       signal: controller.signal
     })
 

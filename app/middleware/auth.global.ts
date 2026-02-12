@@ -1,12 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to) => {
-  const session = authClient.useSession()
+  const { data: session } = await authClient.useSession(useFetch)
 
-  // On first load, wait for session fetch to complete
-  if (session.value.isPending) {
-    await until(() => session.value.isPending).toBe(false)
-  }
-
-  const isAuthenticated = !!session.value.data
+  const isAuthenticated = !!session.value
 
   const publicRoutes = ['/auth/sign-in', '/auth/sign-up']
 

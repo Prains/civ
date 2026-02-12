@@ -16,12 +16,11 @@ watch(lobby, (val) => {
   }
 }, { immediate: true })
 
-const client = useRpcClient()
 const abortController = new AbortController()
 
 async function subscribeToLobby() {
   try {
-    const iterator = await client.lobby.subscribe(
+    const iterator = await rpcClient.lobby.subscribe(
       { lobbyId },
       { signal: abortController.signal }
     )

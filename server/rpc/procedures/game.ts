@@ -12,7 +12,7 @@ function generateMap() {
   const tiles: Array<{ q: number, r: number, type: TerrainType }> = []
   for (let q = 0; q < 10; q++) {
     for (let r = 0; r < 10; r++) {
-      const type = terrainTypes[Math.floor(Math.random() * terrainTypes.length)]
+      const type = terrainTypes[Math.floor(Math.random() * terrainTypes.length)]!
       tiles.push({ q, r, type })
     }
   }

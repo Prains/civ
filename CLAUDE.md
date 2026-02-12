@@ -122,17 +122,17 @@ export const exampleRouter = {
 
 ### oRPC + Pinia Colada (`@orpc/vue-colada` adapter)
 
-Two utilities in `app/utils/rpc.ts`:
+Two module-level singletons in `app/utils/rpc.ts` (auto-imported):
 
-- **`useORPC()`** — returns Vue Colada utils with `.queryOptions()`, `.mutationOptions()`, `.key()` for all procedures. Use for reactive queries/mutations.
-- **`useRpcClient()`** — returns the raw oRPC client for imperative (non-reactive) calls, SSE subscriptions, etc.
+- **`orpc`** — Vue Colada utils with `.queryOptions()`, `.mutationOptions()`, `.key()` for all procedures. Use for reactive queries/mutations.
+- **`rpcClient`** — raw oRPC client for imperative (non-reactive) calls, SSE subscriptions, etc.
+
+No plugin needed — SPA mode means these are plain module singletons.
 
 ### Reactive Queries
 
 ```typescript
-const orpc = useORPC()
-
-// Query with auto-caching and loading state
+// orpc is auto-imported from app/utils/rpc.ts
 const { data: lobbies, isPending } = useQuery(
   orpc.lobby.list.queryOptions({})
 )
@@ -148,7 +148,6 @@ const { data: lobby } = useQuery(
 ### Mutations with Cache Invalidation
 
 ```typescript
-const orpc = useORPC()
 const queryCache = useQueryCache()
 
 const { mutate: createLobby, isPending: isCreating } = useMutation(
@@ -163,7 +162,6 @@ const { mutate: createLobby, isPending: isCreating } = useMutation(
 ### Cache Invalidation via `.key()`
 
 ```typescript
-const orpc = useORPC()
 const queryCache = useQueryCache()
 
 // Invalidate all lobby queries
@@ -182,12 +180,10 @@ Wrap queries/mutations in composables for reuse across components:
 ```typescript
 // app/composables/lobbies.ts
 export const useListLobbies = () => {
-  const orpc = useORPC()
   return useQuery(orpc.lobby.list.queryOptions({}))
 }
 
 export const useCreateLobby = () => {
-  const orpc = useORPC()
   const queryCache = useQueryCache()
   return useMutation(orpc.lobby.create.mutationOptions({
     onSuccess: () => queryCache.invalidateQueries({ key: orpc.lobby.key() })
@@ -197,16 +193,14 @@ export const useCreateLobby = () => {
 
 ### Direct RPC Calls (imperative / SSE subscriptions)
 
-Use `useRpcClient()` for one-off calls and streaming subscriptions:
+Use `rpcClient` for one-off calls and streaming subscriptions:
 
 ```typescript
-const client = useRpcClient()
-
-// Imperative call
-await client.lobby.join({ lobbyId })
+// rpcClient is auto-imported from app/utils/rpc.ts
+await rpcClient.lobby.join({ lobbyId })
 
 // SSE subscription
-const iterator = await client.lobby.subscribe(
+const iterator = await rpcClient.lobby.subscribe(
   { lobbyId },
   { signal: abortController.signal }
 )

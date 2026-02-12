@@ -1,21 +1,16 @@
 import type { RouterClient } from '@orpc/server'
+import { createORPCClient } from '@orpc/client'
+import { RPCLink } from '@orpc/client/fetch'
 import { createORPCVueColadaUtils } from '@orpc/vue-colada'
 import type { router } from '../../server/rpc/router'
 
 export type RpcClient = RouterClient<typeof router>
 
-/**
- * Vue Colada utils — provides .queryOptions(), .mutationOptions(), .key() for all procedures.
- * Must be called after plugin initialization (in components/composables, not at module scope).
- */
-export function useORPC() {
-  const client = useNuxtApp().$rpc as RpcClient
-  return createORPCVueColadaUtils(client)
-}
+const link = new RPCLink({
+  url: '/api/rpc',
+  fetch: (input, init) => globalThis.fetch(input, { ...init, credentials: 'include' })
+})
 
-/**
- * Raw oRPC client for imperative (non-reactive) calls.
- */
-export function useRpcClient(): RpcClient {
-  return useNuxtApp().$rpc as RpcClient
-}
+export const rpcClient: RpcClient = createORPCClient(link)
+
+export const orpc = createORPCVueColadaUtils(rpcClient)
