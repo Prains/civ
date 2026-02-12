@@ -3,14 +3,9 @@ import { RPCLink } from '@orpc/client/fetch'
 import type { RpcClient } from '~/utils/rpc'
 
 export default defineNuxtPlugin(() => {
-  const sessionToken = useCookie('sessionToken')
-
   const link = new RPCLink({
     url: `${window.location.origin}/api/rpc`,
-    headers: () => {
-      const token = sessionToken.value
-      return token ? { 'x-session-token': token } : {}
-    }
+    fetch: (input, init) => globalThis.fetch(input, { ...init, credentials: 'include' })
   })
 
   const rpc: RpcClient = createORPCClient(link)
