@@ -3,27 +3,15 @@ import { ORPCError } from '@orpc/server'
 import { authedProcedure, publicProcedure } from '../base'
 import { publisher } from '../publisher'
 import prisma from '../../utils/prisma'
-
-type TerrainType = 'grass' | 'water' | 'mountain'
-
-const terrainTypes: TerrainType[] = ['grass', 'water', 'mountain']
+import { generateMap } from '../../utils/map-generator'
 
 const MAP_WIDTH = 400
 const MAP_HEIGHT = 400
 
-function generateMap() {
-  const tiles: Array<{ q: number, r: number, type: TerrainType }> = []
-  for (let q = 0; q < MAP_WIDTH; q++) {
-    for (let r = 0; r < MAP_HEIGHT; r++) {
-      const type = terrainTypes[Math.floor(Math.random() * terrainTypes.length)]!
-      tiles.push({ q, r, type })
-    }
-  }
-  return { width: MAP_WIDTH, height: MAP_HEIGHT, tiles }
-}
+const mapTypeSchema = z.enum(['continents', 'pangaea', 'archipelago']).default('continents')
 
 const start = authedProcedure
-  .input(z.object({ lobbyId: z.string() }))
+  .input(z.object({ lobbyId: z.string(), mapType: mapTypeSchema }))
   .handler(async ({ input, context }) => {
     const lobby = await prisma.lobby.findUnique({
       where: { id: input.lobbyId }
@@ -41,7 +29,7 @@ const start = authedProcedure
       throw new ORPCError('CONFLICT', { message: 'Игра уже началась' })
     }
 
-    const mapData = generateMap()
+    const mapData = generateMap(MAP_WIDTH, MAP_HEIGHT, input.mapType)
 
     const game = await prisma.game.create({
       data: {

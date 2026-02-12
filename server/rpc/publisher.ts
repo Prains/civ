@@ -6,7 +6,7 @@ export type LobbyEvent
     | { type: 'gameStarted', gameId: string }
 
 export type GameEvent
-  = | { type: 'mapReady', mapData: { width: number, height: number, tiles: Array<{ q: number, r: number, type: string }> } }
+  = | { type: 'mapReady', mapData: { width: number, height: number, terrain: number[] } }
 
 type Channels = Record<`lobby:${string}`, LobbyEvent> & Record<`game:${string}`, GameEvent>
 

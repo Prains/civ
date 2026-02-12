@@ -47,8 +47,15 @@ async function subscribeToLobby() {
 const { mutateAsync: startGameAsync } = useStartGame()
 const { mutateAsync: leaveLobbyAsync } = useLeaveLobby()
 
+const mapTypeOptions = [
+  { label: 'Континенты', value: 'continents' },
+  { label: 'Пангея', value: 'pangaea' },
+  { label: 'Архипелаг', value: 'archipelago' }
+]
+const selectedMapType = ref<'continents' | 'pangaea' | 'archipelago'>('continents')
+
 async function handleStart() {
-  const result = await startGameAsync({ lobbyId })
+  const result = await startGameAsync({ lobbyId, mapType: selectedMapType.value })
   await navigateTo(`/game/${result.gameId}`)
 }
 
@@ -79,7 +86,13 @@ onUnmounted(() => {
           {{ lobbyId.slice(0, 8) }}
         </p>
       </div>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-2">
+        <USelect
+          v-if="isHost"
+          v-model="selectedMapType"
+          :items="mapTypeOptions"
+          class="w-44"
+        />
         <UButton
           v-if="isHost"
           icon="i-lucide-play"

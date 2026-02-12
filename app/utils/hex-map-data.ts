@@ -1,16 +1,19 @@
-export type TerrainId = 0 | 1 | 2
-
-export const TERRAIN_GRASS: TerrainId = 0
-export const TERRAIN_WATER: TerrainId = 1
-export const TERRAIN_MOUNTAIN: TerrainId = 2
+export type TerrainId = 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
 
 export const HEX_SIZE = 30
 export const SQRT3 = Math.sqrt(3)
 
 export const TERRAIN_COLORS: readonly number[] = [
-  0x4ade80, // grass
-  0x60a5fa, // water
-  0x9ca3af // mountain
+  0x1e3a5f, // deep_water
+  0x60a5fa, // shallow_water
+  0xf5d08a, // beach
+  0xe8c86a, // desert
+  0xa8d86a, // plains
+  0x4ade80, // grassland
+  0x2d8a4e, // forest
+  0xb8956a, // hills
+  0x9ca3af, // mountain
+  0xe8edf3 // snow
 ]
 
 export interface HexMapData {
@@ -19,22 +22,12 @@ export interface HexMapData {
   terrain: Uint8Array
 }
 
-const TERRAIN_NAME_TO_ID: Record<string, TerrainId> = {
-  grass: TERRAIN_GRASS,
-  water: TERRAIN_WATER,
-  mountain: TERRAIN_MOUNTAIN
-}
-
 export function buildMapData(
-  tiles: Array<{ q: number, r: number, type: string }>,
+  terrainArray: number[],
   width: number,
   height: number
 ): HexMapData {
-  const terrain = new Uint8Array(width * height)
-  for (const tile of tiles) {
-    terrain[tile.r * width + tile.q] = TERRAIN_NAME_TO_ID[tile.type] ?? TERRAIN_GRASS
-  }
-  return { width, height, terrain }
+  return { width, height, terrain: new Uint8Array(terrainArray) }
 }
 
 export function getTerrain(map: HexMapData, q: number, r: number): TerrainId {

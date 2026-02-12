@@ -23,7 +23,7 @@ onMounted(async () => {
     for await (const event of iterator) {
       if (event.type === 'mapReady') {
         mapData.value = buildMapData(
-          event.mapData.tiles as Array<{ q: number, r: number, type: string }>,
+          event.mapData.terrain as number[],
           event.mapData.width,
           event.mapData.height
         )
