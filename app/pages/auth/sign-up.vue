@@ -1,6 +1,30 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
+import type { FormSubmitEvent, AuthFormField } from '@nuxt/ui'
+
+const fields: AuthFormField[] = [
+  {
+    name: 'name',
+    type: 'text',
+    label: 'Name',
+    placeholder: 'Your name',
+    required: true
+  },
+  {
+    name: 'email',
+    type: 'email',
+    label: 'Email',
+    placeholder: 'you@example.com',
+    required: true
+  },
+  {
+    name: 'password',
+    type: 'password',
+    label: 'Password',
+    placeholder: 'Min 8 characters',
+    required: true
+  }
+]
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -10,116 +34,59 @@ const schema = z.object({
 
 type Schema = z.output<typeof schema>
 
-const state = reactive<Partial<Schema>>({
-  name: '',
-  email: '',
-  password: ''
-})
-
 const error = ref('')
-const loading = ref(false)
 
-async function handleSubmit(event: FormSubmitEvent<Schema>) {
+async function onSubmit(event: FormSubmitEvent<Schema>) {
   error.value = ''
-  loading.value = true
 
-  try {
-    const { error: authError } = await authClient.signUp.email({
-      name: event.data.name,
-      email: event.data.email,
-      password: event.data.password
-    })
+  const { error: authError } = await authClient.signUp.email({
+    name: event.data.name,
+    email: event.data.email,
+    password: event.data.password
+  })
 
-    if (authError) {
-      error.value = authError.message ?? 'Sign up failed'
-      return
-    }
-
-    await navigateTo('/lobbies')
-  } catch (e: unknown) {
-    error.value = e instanceof Error ? e.message : 'Sign up failed'
-  } finally {
-    loading.value = false
+  if (authError) {
+    error.value = authError.message ?? 'Sign up failed'
+    return
   }
+
+  await navigateTo('/lobbies')
 }
 </script>
 
 <template>
   <div class="flex items-center justify-center min-h-[80vh]">
-    <UCard class="w-full max-w-sm">
-      <template #header>
-        <h1 class="text-xl font-bold text-center">
-          Sign Up
-        </h1>
-      </template>
-
-      <UForm
-        :state="state"
+    <UPageCard class="w-full max-w-md">
+      <UAuthForm
+        :fields="fields"
         :schema="schema"
-        class="flex flex-col gap-4"
-        @submit="handleSubmit"
+        :submit="{ label: 'Sign Up' }"
+        title="Create an account"
+        icon="i-lucide-user-plus"
+        loading-auto
+        @submit="onSubmit"
       >
-        <UFormField
-          label="Name"
-          name="name"
-          required
-        >
-          <UInput
-            v-model="state.name"
-            placeholder="Your name"
-            autofocus
-          />
-        </UFormField>
-
-        <UFormField
-          label="Email"
-          name="email"
-          required
-        >
-          <UInput
-            v-model="state.email"
-            type="email"
-            placeholder="you@example.com"
-          />
-        </UFormField>
-
-        <UFormField
-          label="Password"
-          name="password"
-          required
-        >
-          <UInput
-            v-model="state.password"
-            type="password"
-            placeholder="Min 8 characters"
-          />
-        </UFormField>
-
-        <p
-          v-if="error"
-          class="text-sm text-red-500"
-        >
-          {{ error }}
-        </p>
-
-        <UButton
-          type="submit"
-          label="Sign Up"
-          size="lg"
-          block
-          :loading="loading"
-        />
-
-        <p class="text-sm text-center text-neutral-500">
+        <template #description>
           Already have an account?
-          <NuxtLink
+          <ULink
             to="/auth/sign-in"
-            class="text-primary hover:underline"
+            class="text-primary font-medium"
           >
             Sign in
-          </NuxtLink>
-        </p>
-      </UForm>
-    </UCard>
+          </ULink>.
+        </template>
+
+        <template
+          v-if="error"
+          #validation
+        >
+          <UAlert
+            color="error"
+            icon="i-lucide-circle-alert"
+            :title="error"
+          />
+        </template>
+      </UAuthForm>
+    </UPageCard>
   </div>
 </template>
