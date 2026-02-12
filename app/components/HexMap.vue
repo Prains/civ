@@ -1,19 +1,14 @@
 <script setup lang="ts">
 import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js'
 import type { HexMapData } from '~/utils/hex-map-data'
+import { createHexTextureAtlas, type HexTextureAtlas } from '~/utils/hex-texture-atlas'
+import { createTilePool, type TilePool } from '~/utils/hex-tile-pool'
 
 const props = defineProps<{
   mapData: HexMapData
 }>()
 
 const containerRef = ref<HTMLDivElement>()
-
-// Pre-computed hex vertices for a flat-top hexagon
-const HEX_VERTICES: number[] = []
-for (let i = 0; i < 6; i++) {
-  const angle = (Math.PI / 180) * (60 * i)
-  HEX_VERTICES.push(Math.cos(angle), Math.sin(angle))
-}
 
 // Store cleanup function for onBeforeUnmount (must register before await)
 let cleanup: (() => void) | null = null
@@ -36,11 +31,33 @@ onMounted(async () => {
 
   containerRef.value.appendChild(app.canvas)
 
+  // --- Texture atlas and tile pool ---
+  const textureAtlas: HexTextureAtlas = createHexTextureAtlas()
+  const tilePool: TilePool = createTilePool(2000)
+
+  // --- World container with layer hierarchy ---
   const worldContainer = new Container({ isRenderGroup: true })
   app.stage.addChild(worldContainer)
 
-  const tileGraphics = new Graphics()
-  worldContainer.addChild(tileGraphics)
+  // Layer 1: shadow container (placeholder for Task 4)
+  const shadowContainer = new Container()
+  worldContainer.addChild(shadowContainer)
+
+  // Layer 2: tile sprites from pool
+  worldContainer.addChild(tilePool.tileContainer)
+
+  // Layer 3: feature container (placeholder for Task 5)
+  const featureContainer = new Container({ sortableChildren: true })
+  worldContainer.addChild(featureContainer)
+
+  // Layer 4: water overlay container (placeholder for Task 5)
+  const waterOverlayContainer = new Container()
+  worldContainer.addChild(waterOverlayContainer)
+
+  // Layer 5: LOD fallback graphics (hidden by default)
+  const lodGraphics = new Graphics()
+  lodGraphics.visible = false
+  worldContainer.addChild(lodGraphics)
 
   // FPS counter (fixed on screen)
   const fpsText = new Text({
@@ -79,13 +96,17 @@ onMounted(async () => {
     if (visibleKey === lastVisibleKey) return
     lastVisibleKey = visibleKey
 
-    tileGraphics.clear()
+    const useLod = camera.zoom < 0.25
 
-    const useRect = camera.zoom < 0.25
-    const useStroke = camera.zoom >= 0.5
+    if (useLod) {
+      // LOD mode: hide sprites, show colored rectangles
+      tilePool.tileContainer.visible = false
+      shadowContainer.visible = false
+      featureContainer.visible = false
+      waterOverlayContainer.visible = false
+      lodGraphics.visible = true
 
-    if (useRect) {
-      // LOD: rectangles for very zoomed out view
+      lodGraphics.clear()
       const rectW = HEX_SIZE * 1.5
       const rectH = HEX_SIZE * SQRT3
 
@@ -94,31 +115,19 @@ onMounted(async () => {
           const terrain = getTerrain(props.mapData, q, r)
           const px = HEX_SIZE * 1.5 * q
           const py = HEX_SIZE * (SQRT3 / 2 * q + SQRT3 * r)
-          tileGraphics.rect(px - rectW / 2, py - rectH / 2, rectW, rectH)
-          tileGraphics.fill({ color: TERRAIN_COLORS[terrain] })
+          lodGraphics.rect(px - rectW / 2, py - rectH / 2, rectW, rectH)
+          lodGraphics.fill({ color: TERRAIN_COLORS[terrain] })
         }
       }
     } else {
-      // Hex polygons
-      for (let r = range.rMin; r <= range.rMax; r++) {
-        for (let q = range.qMin; q <= range.qMax; q++) {
-          const terrain = getTerrain(props.mapData, q, r)
-          const cx = HEX_SIZE * 1.5 * q
-          const cy = HEX_SIZE * (SQRT3 / 2 * q + SQRT3 * r)
+      // Sprite mode: show tile pool, hide LOD
+      tilePool.tileContainer.visible = true
+      shadowContainer.visible = true
+      featureContainer.visible = true
+      waterOverlayContainer.visible = true
+      lodGraphics.visible = false
 
-          const points: number[] = []
-          for (let i = 0; i < 12; i += 2) {
-            points.push(cx + HEX_SIZE * HEX_VERTICES[i]!, cy + HEX_SIZE * HEX_VERTICES[i + 1]!)
-          }
-
-          tileGraphics.poly(points, true)
-          tileGraphics.fill({ color: TERRAIN_COLORS[terrain] })
-
-          if (useStroke) {
-            tileGraphics.stroke({ color: 0x1e293b, width: 1.5 })
-          }
-        }
-      }
+      tilePool.update(range, props.mapData, textureAtlas, camera.zoom)
     }
   }
 
@@ -137,6 +146,8 @@ onMounted(async () => {
 
   cleanup = () => {
     destroyCamera()
+    tilePool.destroy()
+    textureAtlas.destroy()
     app.destroy({ removeView: true })
   }
 })
