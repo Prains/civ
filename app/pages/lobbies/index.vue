@@ -5,37 +5,21 @@ if (!sessionToken.value) {
   await navigateTo('/')
 }
 
-const rpc = useRpc()
-const lobbies = ref<Array<{ id: string, hostId: string, playerCount: number, createdAt: Date }>>([])
-const loading = ref(true)
-const creating = ref(false)
+const { data: lobbies, isPending: loading } = useListLobbies()
 
-async function fetchLobbies() {
-  try {
-    lobbies.value = await rpc.lobby.list()
-  } finally {
-    loading.value = false
-  }
-}
+const { mutateAsync: createLobbyAsync, isLoading: creating } = useCreateLobby()
+
+const { mutateAsync: joinLobbyAsync } = useJoinLobby()
 
 async function createLobby() {
-  creating.value = true
-  try {
-    const lobby = await rpc.lobby.create()
-    await navigateTo(`/lobbies/${lobby.id}`)
-  } finally {
-    creating.value = false
-  }
+  const lobby = await createLobbyAsync()
+  await navigateTo(`/lobbies/${lobby.id}`)
 }
 
 async function joinLobby(lobbyId: string) {
-  await rpc.lobby.join({ lobbyId })
+  await joinLobbyAsync({ lobbyId })
   await navigateTo(`/lobbies/${lobbyId}`)
 }
-
-onMounted(() => {
-  fetchLobbies()
-})
 </script>
 
 <template>
@@ -63,7 +47,7 @@ onMounted(() => {
     </div>
 
     <div
-      v-else-if="lobbies.length === 0"
+      v-else-if="(lobbies ?? []).length === 0"
       class="py-12 text-center text-neutral-500"
     >
       No lobbies available. Create one to get started.
@@ -74,7 +58,7 @@ onMounted(() => {
       class="space-y-3"
     >
       <UCard
-        v-for="lobby in lobbies"
+        v-for="lobby in lobbies ?? []"
         :key="lobby.id"
         class="cursor-pointer transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
         @click="joinLobby(lobby.id)"
