@@ -27,7 +27,10 @@ async function handleSignOut() {
         <h1 class="text-2xl font-bold">
           Lobbies
         </h1>
-        <UBadge v-if="session.data?.user" variant="subtle">
+        <UBadge
+          v-if="session.data?.user"
+          variant="subtle"
+        >
           {{ session.data.user.name }}
         </UBadge>
       </div>

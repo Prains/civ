@@ -59,27 +59,63 @@ async function handleSubmit(event: FormSubmitEvent<Schema>) {
         class="flex flex-col gap-4"
         @submit="handleSubmit"
       >
-        <UFormField label="Name" name="name" required>
-          <UInput v-model="state.name" placeholder="Your name" autofocus />
+        <UFormField
+          label="Name"
+          name="name"
+          required
+        >
+          <UInput
+            v-model="state.name"
+            placeholder="Your name"
+            autofocus
+          />
         </UFormField>
 
-        <UFormField label="Email" name="email" required>
-          <UInput v-model="state.email" type="email" placeholder="you@example.com" />
+        <UFormField
+          label="Email"
+          name="email"
+          required
+        >
+          <UInput
+            v-model="state.email"
+            type="email"
+            placeholder="you@example.com"
+          />
         </UFormField>
 
-        <UFormField label="Password" name="password" required>
-          <UInput v-model="state.password" type="password" placeholder="Min 8 characters" />
+        <UFormField
+          label="Password"
+          name="password"
+          required
+        >
+          <UInput
+            v-model="state.password"
+            type="password"
+            placeholder="Min 8 characters"
+          />
         </UFormField>
 
-        <p v-if="error" class="text-sm text-red-500">
+        <p
+          v-if="error"
+          class="text-sm text-red-500"
+        >
           {{ error }}
         </p>
 
-        <UButton type="submit" label="Sign Up" size="lg" block :loading="loading" />
+        <UButton
+          type="submit"
+          label="Sign Up"
+          size="lg"
+          block
+          :loading="loading"
+        />
 
         <p class="text-sm text-center text-neutral-500">
           Already have an account?
-          <NuxtLink to="/auth/sign-in" class="text-primary hover:underline">
+          <NuxtLink
+            to="/auth/sign-in"
+            class="text-primary hover:underline"
+          >
             Sign in
           </NuxtLink>
         </p>

@@ -56,23 +56,51 @@ async function handleSubmit(event: FormSubmitEvent<Schema>) {
         class="flex flex-col gap-4"
         @submit="handleSubmit"
       >
-        <UFormField label="Email" name="email" required>
-          <UInput v-model="state.email" type="email" placeholder="you@example.com" autofocus />
+        <UFormField
+          label="Email"
+          name="email"
+          required
+        >
+          <UInput
+            v-model="state.email"
+            type="email"
+            placeholder="you@example.com"
+            autofocus
+          />
         </UFormField>
 
-        <UFormField label="Password" name="password" required>
-          <UInput v-model="state.password" type="password" />
+        <UFormField
+          label="Password"
+          name="password"
+          required
+        >
+          <UInput
+            v-model="state.password"
+            type="password"
+          />
         </UFormField>
 
-        <p v-if="error" class="text-sm text-red-500">
+        <p
+          v-if="error"
+          class="text-sm text-red-500"
+        >
           {{ error }}
         </p>
 
-        <UButton type="submit" label="Sign In" size="lg" block :loading="loading" />
+        <UButton
+          type="submit"
+          label="Sign In"
+          size="lg"
+          block
+          :loading="loading"
+        />
 
         <p class="text-sm text-center text-neutral-500">
           Don't have an account?
-          <NuxtLink to="/auth/sign-up" class="text-primary hover:underline">
+          <NuxtLink
+            to="/auth/sign-up"
+            class="text-primary hover:underline"
+          >
             Sign up
           </NuxtLink>
         </p>

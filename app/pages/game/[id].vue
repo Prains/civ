@@ -45,12 +45,21 @@ onMounted(async () => {
       Game
     </h1>
 
-    <div v-if="error" class="text-red-500">
+    <div
+      v-if="error"
+      class="text-red-500"
+    >
       {{ error }}
     </div>
 
-    <div v-else-if="loading" class="flex items-center gap-2">
-      <UIcon name="i-lucide-loader-2" class="animate-spin" />
+    <div
+      v-else-if="loading"
+      class="flex items-center gap-2"
+    >
+      <UIcon
+        name="i-lucide-loader-2"
+        class="animate-spin"
+      />
       <span>Loading map...</span>
     </div>
 
