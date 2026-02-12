@@ -6,10 +6,10 @@ if (sessionToken.value) {
   await navigateTo('/lobbies')
 }
 
-const rpc = useRpc()
 const name = ref('')
-const loading = ref(false)
 const error = ref('')
+
+const { mutateAsync: joinPlayer, isLoading: loading } = useJoinPlayer()
 
 async function handleJoin() {
   const trimmed = name.value.trim()
@@ -18,18 +18,15 @@ async function handleJoin() {
     return
   }
 
-  loading.value = true
   error.value = ''
 
   try {
-    const result = await rpc.player.join({ name: trimmed })
+    const result = await joinPlayer({ name: trimmed })
     sessionToken.value = result.sessionToken
     playerId.value = result.player.id
     await navigateTo('/lobbies')
   } catch (e: unknown) {
     error.value = e instanceof Error ? e.message : 'Failed to join'
-  } finally {
-    loading.value = false
   }
 }
 </script>
