@@ -8,15 +8,18 @@ type TerrainType = 'grass' | 'water' | 'mountain'
 
 const terrainTypes: TerrainType[] = ['grass', 'water', 'mountain']
 
+const MAP_WIDTH = 400
+const MAP_HEIGHT = 400
+
 function generateMap() {
   const tiles: Array<{ q: number, r: number, type: TerrainType }> = []
-  for (let q = 0; q < 10; q++) {
-    for (let r = 0; r < 10; r++) {
+  for (let q = 0; q < MAP_WIDTH; q++) {
+    for (let r = 0; r < MAP_HEIGHT; r++) {
       const type = terrainTypes[Math.floor(Math.random() * terrainTypes.length)]!
       tiles.push({ q, r, type })
     }
   }
-  return { tiles }
+  return { width: MAP_WIDTH, height: MAP_HEIGHT, tiles }
 }
 
 const start = authedProcedure

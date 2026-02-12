@@ -7,7 +7,7 @@ import type { router } from '../../server/rpc/router'
 export type RpcClient = RouterClient<typeof router>
 
 const link = new RPCLink({
-  url: '/api/rpc',
+  url: `${window.location.origin}/api/rpc`,
   fetch: (input, init) => globalThis.fetch(input, { ...init, credentials: 'include' })
 })
 

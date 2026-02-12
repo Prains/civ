@@ -1,24 +1,20 @@
 <script setup lang="ts">
+import type { HexMapData } from '~/utils/hex-map-data'
+
 const route = useRoute()
 const gameId = route.params.id as string
 
-interface Tile {
-  q: number
-  r: number
-  type: 'grass' | 'water' | 'mountain'
-}
-
-const tiles = ref<Tile[]>([])
+const mapData = ref<HexMapData>()
 const loading = ref(true)
 const error = ref('')
 
+const controller = new AbortController()
+
+onBeforeUnmount(() => {
+  controller.abort()
+})
+
 onMounted(async () => {
-  const controller = new AbortController()
-
-  onBeforeUnmount(() => {
-    controller.abort()
-  })
-
   try {
     const iterator = await rpcClient.game.subscribe({ gameId }, {
       signal: controller.signal
@@ -26,7 +22,11 @@ onMounted(async () => {
 
     for await (const event of iterator) {
       if (event.type === 'mapReady') {
-        tiles.value = event.mapData.tiles as Tile[]
+        mapData.value = buildMapData(
+          event.mapData.tiles as Array<{ q: number, r: number, type: string }>,
+          event.mapData.width,
+          event.mapData.height
+        )
         loading.value = false
       }
     }
@@ -39,21 +39,17 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="flex flex-col items-center gap-4 p-4">
-    <h1 class="text-2xl font-bold">
-      Игра
-    </h1>
-
+  <div class="w-screen h-screen">
     <div
       v-if="error"
-      class="text-red-500"
+      class="flex items-center justify-center h-full text-red-500"
     >
       {{ error }}
     </div>
 
     <div
       v-else-if="loading"
-      class="flex items-center gap-2"
+      class="flex items-center justify-center h-full gap-2"
     >
       <UIcon
         name="i-lucide-loader-2"
@@ -62,8 +58,9 @@ onMounted(async () => {
       <span>Загрузка карты...</span>
     </div>
 
-    <ClientOnly v-else>
-      <HexMap :tiles="tiles" />
-    </ClientOnly>
+    <HexMap
+      v-else-if="mapData"
+      :map-data="mapData"
+    />
   </div>
 </template>
