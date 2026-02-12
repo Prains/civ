@@ -20,24 +20,57 @@ export interface HexMapData {
   width: number
   height: number
   terrain: Uint8Array
+  elevation: Uint8Array
 }
 
 export function buildMapData(
   terrainArray: number[],
+  elevationArray: number[],
   width: number,
   height: number
 ): HexMapData {
-  return { width, height, terrain: new Uint8Array(terrainArray) }
+  return {
+    width,
+    height,
+    terrain: new Uint8Array(terrainArray),
+    elevation: new Uint8Array(elevationArray)
+  }
 }
 
 export function getTerrain(map: HexMapData, q: number, r: number): TerrainId {
   return map.terrain[r * map.width + q] as TerrainId
 }
 
+export function getElevation(map: HexMapData, q: number, r: number): number {
+  return map.elevation[r * map.width + q]!
+}
+
+export function getElevationSafe(map: HexMapData, q: number, r: number): number {
+  if (q < 0 || q >= map.width || r < 0 || r >= map.height) return 0
+  return map.elevation[r * map.width + q]!
+}
+
 export function hexToPixel(q: number, r: number): { x: number, y: number } {
   return {
     x: HEX_SIZE * 1.5 * q,
     y: HEX_SIZE * (SQRT3 / 2 * q + SQRT3 * r)
+  }
+}
+
+// Flat-top hex neighbors (offset coordinates for flat-top hex grid)
+export function getHexNeighbors(q: number, r: number): Array<[number, number]> {
+  return [
+    [q + 1, r], [q - 1, r],
+    [q, r + 1], [q, r - 1],
+    [q + 1, r - 1], [q - 1, r + 1]
+  ]
+}
+
+export function seededRandom(seed: number): () => number {
+  let s = seed | 0
+  return () => {
+    s = (s * 1664525 + 1013904223) | 0
+    return (s >>> 0) / 4294967296
   }
 }
 

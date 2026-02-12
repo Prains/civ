@@ -6,6 +6,7 @@ export interface GeneratedMap {
   width: number
   height: number
   terrain: number[]
+  elevation: number[]
 }
 
 // Terrain IDs (must match client-side hex-map-data.ts)
@@ -88,28 +89,30 @@ export function generateMap(
   const moistNoise = createNoise2D(rng)
 
   const terrain = new Array<number>(width * height)
+  const elevation = new Array<number>(width * height)
 
   for (let r = 0; r < height; r++) {
     for (let q = 0; q < width; q++) {
-      let elevation = fbm(elevNoise, q, r, 4, 0.005, 0.5)
+      let elev = fbm(elevNoise, q, r, 4, 0.005, 0.5)
       const moisture = fbm(moistNoise, q, r, 3, 0.008, 0.5)
 
       const dist = distanceToCenter(q, r, width, height)
 
       if (mapType === 'continents') {
-        elevation -= dist * 0.3
+        elev -= dist * 0.3
       } else if (mapType === 'pangaea') {
-        elevation -= dist * 0.5
+        elev -= dist * 0.5
       } else if (mapType === 'archipelago') {
-        elevation *= 0.7
+        elev *= 0.7
       }
 
       // Clamp to [0, 1]
-      elevation = Math.max(0, Math.min(1, elevation))
+      elev = Math.max(0, Math.min(1, elev))
 
-      terrain[r * width + q] = determineBiome(elevation, moisture)
+      terrain[r * width + q] = determineBiome(elev, moisture)
+      elevation[r * width + q] = Math.round(elev * 255)
     }
   }
 
-  return { width, height, terrain }
+  return { width, height, terrain, elevation }
 }

@@ -24,6 +24,7 @@ onMounted(async () => {
       if (event.type === 'mapReady') {
         mapData.value = buildMapData(
           event.mapData.terrain as number[],
+          event.mapData.elevation as number[],
           event.mapData.width,
           event.mapData.height
         )
