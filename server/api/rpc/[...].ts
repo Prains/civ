@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   const { matched, response } = await handler.handle(request, {
     prefix: '/api/rpc',
     context: {
-      sessionToken: getHeader(event, 'x-session-token') ?? null
+      headers: request.headers
     } satisfies BaseContext
   })
 

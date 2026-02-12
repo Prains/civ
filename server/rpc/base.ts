@@ -1,29 +1,27 @@
-import type { Player } from '../../app/generated/prisma/client'
 import { ORPCError, os } from '@orpc/server'
-import prisma from '../utils/prisma'
+import { auth } from '../utils/auth'
+
+type AuthSession = typeof auth.$Infer.Session
 
 export interface BaseContext {
-  sessionToken: string | null
+  headers: Headers
 }
 
 export interface AuthedContext extends BaseContext {
-  player: Player
+  user: AuthSession['user']
+  session: AuthSession['session']
 }
 
 export const publicProcedure = os.$context<BaseContext>()
 
 export const authedProcedure = publicProcedure.use(async ({ context, next }) => {
-  if (!context.sessionToken) {
-    throw new ORPCError('UNAUTHORIZED', { message: 'Missing session token' })
-  }
-
-  const player = await prisma.player.findUnique({
-    where: { sessionToken: context.sessionToken }
+  const session = await auth.api.getSession({
+    headers: context.headers
   })
 
-  if (!player) {
-    throw new ORPCError('UNAUTHORIZED', { message: 'Invalid session token' })
+  if (!session) {
+    throw new ORPCError('UNAUTHORIZED', { message: 'Not authenticated' })
   }
 
-  return next({ context: { player } })
+  return next({ context: { user: session.user, session: session.session } })
 })

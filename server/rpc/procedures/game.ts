@@ -30,7 +30,7 @@ const start = authedProcedure
       throw new ORPCError('NOT_FOUND', { message: 'Lobby not found' })
     }
 
-    if (lobby.hostId !== context.player.id) {
+    if (lobby.hostId !== context.user.id) {
       throw new ORPCError('FORBIDDEN', { message: 'Only the host can start the game' })
     }
 
