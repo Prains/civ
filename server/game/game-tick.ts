@@ -1,6 +1,6 @@
 import type { GameEvent } from '../../shared/game-types'
 import { tickResources } from './systems/resource-system'
-import { tickUnitAI } from './systems/unit-ai-system'
+import { tickUnitAI, tickBuilderImprovements } from './systems/unit-ai-system'
 import { tickMovement } from './systems/movement-system'
 import { tickCombat } from './systems/combat-system'
 import { tickSettlements } from './systems/settlement-system'
@@ -8,6 +8,7 @@ import { tickResearch } from './systems/research-system'
 import { tickAdvisorLoyalty } from './systems/council-system'
 import { tickFog } from './systems/fog-system'
 import { checkVictory, checkElimination } from './systems/victory-system'
+import { tickNeutrals, tickBarbarianCamps } from './systems/neutral-system'
 import type { GameStateManager } from './game-state'
 
 /**
@@ -40,8 +41,14 @@ export function executeTick(manager: GameStateManager): GameEvent[] {
   // 2. Unit AI decisions
   tickUnitAI(state)
 
+  // 2.5. Neutral unit AI
+  tickNeutrals(state)
+
   // 3. Unit movement
   tickMovement(state)
+
+  // 3.5. Builder improvements
+  tickBuilderImprovements(state)
 
   // 4. Combat resolution
   const combatEvents = tickCombat(state)
@@ -69,6 +76,9 @@ export function executeTick(manager: GameStateManager): GameEvent[] {
 
   // 8. Fog of war
   tickFog(state)
+
+  // 8.5. Barbarian camp spawning
+  tickBarbarianCamps(state)
 
   // 9. Victory check
   const eliminationEvents = checkElimination(state)

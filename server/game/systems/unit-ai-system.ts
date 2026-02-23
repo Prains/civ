@@ -1,4 +1,4 @@
-import type { GameState, GameUnit, GamePlayer } from '../../../shared/game-types'
+import type { GameState, GameUnit, GamePlayer, ImprovementType } from '../../../shared/game-types'
 import type { FactionDef } from '../../../shared/faction-defs'
 import { getFaction } from '../../../shared/faction-defs'
 import { hexDistance } from './combat-system'
@@ -416,6 +416,58 @@ function findBuildTarget(
   }
 
   return bestPos
+}
+
+/**
+ * Determines the appropriate improvement type for a tile based on its terrain.
+ * - Forest (terrain=3) -> farm_improvement (clear forest, +food)
+ * - Hills (terrain=2) -> mine (+production)
+ * - Any other land terrain -> road (+movement speed)
+ */
+function getImprovementForTerrain(terrainValue: number): ImprovementType {
+  if (terrainValue === 3) return 'farm_improvement'
+  if (terrainValue === 2) return 'mine'
+  return 'road'
+}
+
+/**
+ * Processes builder units that are in the 'building' state and at their target tile.
+ * Creates the appropriate improvement based on terrain and sets the builder back to idle.
+ * Each improvement takes 1 tick to build (simplified).
+ * Does not overwrite existing improvements.
+ */
+export function tickBuilderImprovements(state: GameState): void {
+  for (const unit of state.units.values()) {
+    if (unit.type !== 'builder') continue
+    if (unit.state !== 'building') continue
+    if (unit.targetQ === undefined || unit.targetR === undefined) continue
+
+    // Check if builder has arrived at the target tile
+    if (unit.q !== unit.targetQ || unit.r !== unit.targetR) continue
+
+    const key = `${unit.q},${unit.r}`
+
+    // Do not overwrite existing improvements
+    if (state.improvements.has(key)) {
+      unit.state = 'idle'
+      unit.targetQ = undefined
+      unit.targetR = undefined
+      continue
+    }
+
+    // Determine improvement type based on terrain
+    const terrainIdx = unit.r * state.mapWidth + unit.q
+    const terrainValue = state.terrain[terrainIdx]
+    const improvement = getImprovementForTerrain(terrainValue)
+
+    // Place the improvement
+    state.improvements.set(key, improvement)
+
+    // Set builder back to idle
+    unit.state = 'idle'
+    unit.targetQ = undefined
+    unit.targetR = undefined
+  }
 }
 
 /**
