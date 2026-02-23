@@ -31,3 +31,6 @@ coverage/
 # Database
 *.db
 *.db-journal
+
+# Git worktrees
+.worktrees/
