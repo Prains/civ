@@ -1,9 +1,12 @@
 import { z } from 'zod'
 import { ORPCError } from '@orpc/server'
-import { authedProcedure, publicProcedure } from '../base'
+import { authedProcedure } from '../base'
 import { publisher } from '../publisher'
 import prisma from '../../utils/prisma'
 import { generateMap } from '../../utils/map-generator'
+import { GameStateManager } from '../../game/game-state'
+import { startGame } from '../../game/game-registry'
+import type { FactionId } from '../../../shared/game-types'
 
 const MAP_WIDTH = 400
 const MAP_HEIGHT = 400
@@ -29,15 +32,47 @@ const start = authedProcedure
       throw new ORPCError('CONFLICT', { message: 'Игра уже началась' })
     }
 
+    const members = await prisma.lobbyMember.findMany({
+      where: { lobbyId: input.lobbyId }
+    })
+
+    // Validate all players selected a faction
+    for (const m of members) {
+      if (!m.factionId) {
+        throw new ORPCError('BAD_REQUEST', { message: 'Not all players have selected a faction' })
+      }
+    }
+
     const mapData = generateMap(MAP_WIDTH, MAP_HEIGHT, input.mapType)
 
     const game = await prisma.game.create({
       data: {
         lobbyId: input.lobbyId,
-        mapData: JSON.stringify(mapData)
+        mapData: JSON.stringify(mapData),
+        players: {
+          create: members.map(m => ({
+            userId: m.userId,
+            factionId: m.factionId!
+          }))
+        }
       }
     })
 
+    // Initialize game state manager
+    const manager = GameStateManager.create({
+      gameId: game.id,
+      mapWidth: MAP_WIDTH,
+      mapHeight: MAP_HEIGHT,
+      terrain: new Uint8Array(mapData.terrain),
+      elevation: new Uint8Array(mapData.elevation),
+      players: members.map(m => ({ userId: m.userId, factionId: m.factionId as FactionId })),
+      speed: 1
+    })
+
+    // Register and start tick loop
+    startGame(manager)
+
+    // Update lobby status
     await prisma.lobby.update({
       where: { id: input.lobbyId },
       data: { status: 'playing' }
@@ -51,21 +86,25 @@ const start = authedProcedure
     return { gameId: game.id }
   })
 
-const subscribe = publicProcedure
+const subscribe = authedProcedure
   .input(z.object({ gameId: z.string() }))
-  .handler(async function* ({ input, signal }) {
+  .handler(async function* ({ input, context, signal }) {
     const game = await prisma.game.findUnique({
       where: { id: input.gameId }
     })
 
-    if (game) {
-      yield {
-        type: 'mapReady' as const,
-        mapData: JSON.parse(game.mapData)
-      }
+    if (!game) {
+      throw new ORPCError('NOT_FOUND', { message: 'Game not found' })
     }
 
-    for await (const event of publisher.subscribe(`game:${input.gameId}`, { signal })) {
+    // Send initial map data
+    yield {
+      type: 'mapReady' as const,
+      mapData: JSON.parse(game.mapData) as { width: number, height: number, terrain: number[], elevation: number[] }
+    }
+
+    // Subscribe to per-player tick events
+    for await (const event of publisher.subscribe(`game:${input.gameId}:${context.user.id}`, { signal })) {
       yield event
     }
   })

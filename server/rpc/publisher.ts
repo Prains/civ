@@ -1,4 +1,5 @@
 import { EventPublisher } from '@orpc/server'
+import type { GameEvent as SharedGameEvent, ClientPlayerState } from '../../shared/game-types'
 
 export type LobbyEvent
   = | { type: 'playerJoined', player: { id: string, name: string } }
@@ -6,9 +7,9 @@ export type LobbyEvent
     | { type: 'gameStarted', gameId: string }
     | { type: 'factionSelected', playerId: string, factionId: string }
 
-export type GameEvent
-  = | { type: 'mapReady', mapData: { width: number, height: number, terrain: number[], elevation: number[] } }
+export type TickEvent = { type: 'tick', tick: number, playerState: ClientPlayerState }
 
-type Channels = Record<`lobby:${string}`, LobbyEvent> & Record<`game:${string}`, GameEvent>
+type Channels = Record<`lobby:${string}`, LobbyEvent>
+  & Record<`game:${string}`, SharedGameEvent | TickEvent>
 
 export const publisher = new EventPublisher<Channels>()
