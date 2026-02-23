@@ -15,6 +15,7 @@ import { ADVISOR_TYPES } from '../../shared/game-types'
 import { getFaction } from '../../shared/faction-defs'
 import { getUnitDef } from '../../shared/unit-defs'
 import { SETTLEMENT_DEFS } from '../../shared/settlement-defs'
+import { spawnInitialNeutrals } from './systems/neutral-system'
 
 // --- Config for game creation ---
 
@@ -222,6 +223,9 @@ export class GameStateManager {
         state.diplomacy.push(diplomacy)
       }
     }
+
+    // Spawn neutral factions (animals and barbarians)
+    spawnInitialNeutrals(state)
 
     return new GameStateManager(state)
   }
