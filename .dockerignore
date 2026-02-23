@@ -1,0 +1,9 @@
+node_modules
+.output
+.nuxt
+.git
+*.db
+coverage
+.env*
+app/generated/prisma
+.DS_Store

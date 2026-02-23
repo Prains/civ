@@ -1,8 +1,8 @@
 import { PrismaClient } from '~/generated/prisma/client'
-import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3'
+import { PrismaBunSQLite } from '@synapsenwerkstatt/prisma-bun-sqlite-adapter'
 
 const prismaClientSingleton = () => {
-  const adapter = new PrismaBetterSqlite3({
+  const adapter = new PrismaBunSQLite({
     url: process.env.DATABASE_URL || 'file:./prisma/dev.db'
   })
   return new PrismaClient({ adapter })
