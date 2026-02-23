@@ -22,6 +22,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   lobbyMembers  LobbyMember[]
+  gamePlayers   GamePlayer[]
 
   @@unique([email])
   @@map("user")
@@ -96,9 +97,25 @@ model LobbyMember {
 }
 
 model Game {
+  id        String       @id @default(cuid())
+  lobbyId   String       @unique
+  lobby     Lobby        @relation(fields: [lobbyId], references: [id])
+  mapData   String       // JSON: terrain + elevation
+  status    String       @default("playing") // playing, paused, finished
+  speed     Float        @default(1)
+  winnerId  String?
+  createdAt DateTime     @default(now())
+  players   GamePlayer[]
+}
+
+model GamePlayer {
   id        String   @id @default(cuid())
-  lobbyId   String   @unique
-  lobby     Lobby    @relation(fields: [lobbyId], references: [id])
-  mapData   String   // JSON: { tiles: [{q, r, type}] }
-  createdAt DateTime @default(now())
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  factionId String
+  joinedAt  DateTime @default(now())
+
+  @@unique([gameId, userId])
 }
