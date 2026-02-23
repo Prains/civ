@@ -25,7 +25,7 @@ const get = publicProcedure
       hostId: lobby.hostId,
       status: lobby.status,
       createdAt: lobby.createdAt,
-      players: lobby.members.map(m => ({ id: m.user.id, name: m.user.name }))
+      players: lobby.members.map(m => ({ id: m.user.id, name: m.user.name, factionId: m.factionId }))
     }
   })
 
@@ -81,7 +81,7 @@ const create = authedProcedure
       hostId: lobby.hostId,
       status: lobby.status,
       createdAt: lobby.createdAt,
-      players: lobby.members.map(m => ({ id: m.user.id, name: m.user.name }))
+      players: lobby.members.map(m => ({ id: m.user.id, name: m.user.name, factionId: m.factionId }))
     }
   })
 
@@ -144,6 +144,33 @@ const leave = authedProcedure
     return { success: true }
   })
 
+const selectFaction = authedProcedure
+  .input(z.object({ factionId: z.enum(['solar_empire', 'merchant_league', 'forest_keepers', 'seekers']) }))
+  .handler(async ({ input, context }) => {
+    const { user } = context
+
+    const membership = await prisma.lobbyMember.findFirst({
+      where: { userId: user.id, lobby: { status: 'waiting' } }
+    })
+
+    if (!membership) {
+      throw new ORPCError('BAD_REQUEST', { message: 'Not in a lobby' })
+    }
+
+    await prisma.lobbyMember.update({
+      where: { id: membership.id },
+      data: { factionId: input.factionId }
+    })
+
+    publisher.publish(`lobby:${membership.lobbyId}`, {
+      type: 'factionSelected',
+      playerId: user.id,
+      factionId: input.factionId
+    })
+
+    return { success: true }
+  })
+
 const subscribe = publicProcedure
   .input(z.object({ lobbyId: z.string() }))
   .handler(async function* ({ input, signal }) {
@@ -158,5 +185,6 @@ export const lobbyRouter = {
   create,
   join,
   leave,
+  selectFaction,
   subscribe
 }

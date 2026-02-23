@@ -86,12 +86,13 @@ model Lobby {
 }
 
 model LobbyMember {
-  id       String   @id @default(cuid())
-  lobbyId  String
-  lobby    Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
-  userId   String
-  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  joinedAt DateTime @default(now())
+  id        String   @id @default(cuid())
+  lobbyId   String
+  lobby     Lobby    @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  factionId String?
+  joinedAt  DateTime @default(now())
 
   @@unique([lobbyId, userId])
 }
