@@ -1,6 +1,13 @@
 <script setup lang="ts">
+const factionNames: Record<string, string> = {
+  solar_empire: 'Солнечная Империя',
+  merchant_league: 'Торговая Лига',
+  forest_keepers: 'Хранители Леса',
+  seekers: 'Искатели'
+}
+
 const props = defineProps<{
-  players: Array<{ id: string, name: string }>
+  players: Array<{ id: string, name: string, factionId?: string | null }>
   hostId?: string
 }>()
 </script>
@@ -24,6 +31,14 @@ const props = defineProps<{
         variant="subtle"
       >
         Хост
+      </UBadge>
+      <UBadge
+        v-if="player.factionId"
+        size="xs"
+        variant="subtle"
+        color="neutral"
+      >
+        {{ factionNames[player.factionId] ?? player.factionId }}
       </UBadge>
     </li>
   </ul>

@@ -6,13 +6,19 @@ const lobbyId = route.params.id as string
 
 const { data: lobby, isPending: loading } = useGetLobby(lobbyId)
 
-const players = ref<Array<{ id: string, name: string }>>([])
+const players = ref<Array<{ id: string, name: string, factionId: string | null }>>([])
 const hostId = ref('')
+const selectedFaction = ref<string | null>(null)
 
 watch(lobby, (val) => {
   if (val) {
     hostId.value = val.hostId
     players.value = val.players
+    const currentUserId = session.value.data?.user.id
+    const me = val.players.find(p => p.id === currentUserId)
+    if (me?.factionId) {
+      selectedFaction.value = me.factionId
+    }
   }
 }, { immediate: true })
 
@@ -29,10 +35,15 @@ async function subscribeToLobby() {
       if (event.type === 'playerJoined') {
         const exists = players.value.some(p => p.id === event.player.id)
         if (!exists) {
-          players.value.push(event.player)
+          players.value.push({ ...event.player, factionId: null })
         }
       } else if (event.type === 'playerLeft') {
         players.value = players.value.filter(p => p.id !== event.playerId)
+      } else if (event.type === 'factionSelected') {
+        const player = players.value.find(p => p.id === event.playerId)
+        if (player) {
+          player.factionId = event.factionId
+        }
       } else if (event.type === 'gameStarted') {
         await navigateTo(`/game/${event.gameId}`)
       }
@@ -62,6 +73,13 @@ async function handleStart() {
 async function handleLeave() {
   await leaveLobbyAsync()
   await navigateTo('/lobbies')
+}
+
+async function handleSelectFaction(factionId: string) {
+  selectedFaction.value = factionId
+  await rpcClient.lobby.selectFaction({
+    factionId: factionId as 'solar_empire' | 'merchant_league' | 'forest_keepers' | 'seekers'
+  })
 }
 
 const isHost = computed(() => session.value.data?.user.id === hostId.value)
@@ -144,5 +162,15 @@ onUnmounted(() => {
         :host-id="hostId"
       />
     </UCard>
+
+    <div class="mt-6">
+      <h2 class="mb-3 font-semibold">
+        Выбор фракции
+      </h2>
+      <LobbyFactionSelector
+        :selected-faction-id="selectedFaction"
+        @select="handleSelectFaction"
+      />
+    </div>
   </div>
 </template>
