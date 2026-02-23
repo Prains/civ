@@ -32,7 +32,7 @@ Tick → Update resources → Evaluate unit needs → Move units → Resolve com
 | **Production** | Forests, hills, mines | Building construction, unit purchasing |
 | **Gold** | Trade, markets | Universal resource. Can convert to others via market. Building upkeep |
 | **Science** | Libraries, scholars | Technology research |
-| **Culture** | Temples, monuments | Border expansion, policy unlocks, cultural victory |
+| **Culture** | Temples, monuments | Border expansion, council votes (political capital), cultural victory |
 
 **Acquisition:**
 - Buildings in settlements produce base income per tick (farm = +2 food/tick)
@@ -224,7 +224,7 @@ Combat is tied to diplomatic status between players:
 | **Tension** | Units don't attack, but cannot enter opponent's territory |
 | **War** | Auto-combat enabled, units attack enemies per policies |
 
-**Declaring war** is an explicit player action. Transition: Peace → Tension → War (each step is a player action with cooldown between them to allow preparation).
+**Declaring war** requires council approval (see Section 11). Player proposes "Declare War on [Player]" to the council; if approved, status transitions Peace → Tension → War (with cooldown between steps). Proposing peace also goes through the council.
 
 ### Auto-Combat
 
@@ -313,3 +313,101 @@ Natural path for The Seekers.
 - Barbarian camps generated at map creation in zones far from players
 - Animals (wolves, bears) spawn around forests and mountains
 - New barbarian camps appear on unclaimed territory as game progresses
+
+---
+
+## 11. Council & Laws
+
+### The Council
+
+Each player has an internal **Council of 5 advisors**. Laws and diplomatic actions (war, peace, embargoes) must be proposed to the council and approved by majority vote (3 of 5).
+
+| Advisor | Domain | Votes "yes" when... | Votes "no" when... |
+|---------|--------|---------------------|---------------------|
+| **General** | Military | Army is strong; military laws | Weak army + war proposal; peace during advantage |
+| **Treasurer** | Economy | Treasury is healthy; economic laws | Expensive laws during gold deficit |
+| **Priest** | Culture | High culture; peaceful initiatives | Aggressive laws; low culture |
+| **Scholar** | Science | Scientific laws; innovations | Laws that slow research progress |
+| **Tribune** | People | High general welfare (food, safety) | Any law during famine/war/crisis |
+
+### Advisor Loyalty
+
+Each advisor has **loyalty** (0–100) toward the player:
+
+- **High loyalty** (70+): tends to vote "yes" even if situation isn't ideal
+- **Medium loyalty** (30–70): votes strictly based on domain conditions
+- **Low loyalty** (<30): tends to vote "no" unless conditions are excellent
+
+Loyalty changes:
+- Rises when the advisor's domain prospers (General is happy when battles are won, Treasurer when gold flows)
+- Falls during crises in their domain (Scholar unhappy during science stagnation)
+- Starting loyalty depends on faction (e.g., Solar Empire starts with General at 70, Scholar at 40)
+
+### Proposing Laws
+
+- **Cost**: each proposal costs **culture points** (political capital). More powerful laws cost more
+- **One proposal at a time**: cannot propose a new law until the current vote resolves
+- **Vote resolution**: instant — council votes immediately when proposed
+- **Permanent**: once passed, a law stays active forever. To override, pass a replacement law in the same slot
+
+### Law Trees
+
+Laws are organized into **trees** (like technologies). Some laws require prior laws.
+
+#### Common Laws (all factions)
+
+**Economy Branch:**
+- Taxation → +20% gold, -5 Tribune loyalty
+- Free Trade → trade routes yield x1.5 gold, -10% production
+  - Requires: Taxation
+- Monopoly → one chosen resource yields x2, all others -10%
+  - Requires: Taxation
+
+**Military Branch:**
+- Mobilization → units 30% cheaper, food consumption x1.5
+- Defensive Doctrine → +30% settlement defense, units won't leave territory
+  - Requires: Mobilization
+- Martial Law → production x2, culture and science -50%
+  - Requires: Mobilization
+
+**Society Branch:**
+- Festivals → +20 loyalty to all advisors, -10% production for 500 ticks
+- Education → +20% science, buildings cost 15% more
+- Expansionism → settlers cheaper, new settlements build faster
+
+**Diplomacy Branch:**
+- Declare War (on specific player) → unlocks auto-combat against that player
+- Propose Peace (to specific player) → ends war
+- Trade Embargo (on specific player) → blocks trade routes with that player
+
+#### Solar Empire Unique Laws
+
+- Imperial Conscription → all units gain +10% strength, food consumption x1.3
+- Pax Solaris → captured settlements keep their buildings intact
+  - Requires: Imperial Conscription
+- Triumph → after capturing an enemy capital: +50 General loyalty, all units heal
+  - Requires: Pax Solaris
+
+#### Merchant League Unique Laws
+
+- Gold Standard → gold can substitute any resource (with conversion rate)
+- Banking House → gold generates "interest" (+5% of stockpile every 100 ticks)
+  - Requires: Gold Standard
+- Trade League → trade routes with other players give bonus to both sides
+  - Requires: Gold Standard
+
+#### Forest Keepers Unique Laws
+
+- Law of the Forest → units in forests regenerate health, +20% speed
+- Sanctuary → 3 tiles around sacred groves are invulnerable to enemies
+  - Requires: Law of the Forest
+- Nature's Awakening → neutral animals on your territory become allies
+  - Requires: Sanctuary
+
+#### The Seekers Unique Laws
+
+- Academic Exchange → science x1.5, but enemies also gain +10% science
+- Eureka → every 3rd research completes instantly
+  - Requires: Academic Exchange
+- The Great Experiment → can research 2 technologies simultaneously
+  - Requires: Eureka
