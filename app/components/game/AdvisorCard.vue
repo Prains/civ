@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AdvisorType } from '~/shared/game-types'
+import type { AdvisorType } from '#shared/game-types'
 
 interface Props {
   advisor: { type: AdvisorType, loyalty: number }

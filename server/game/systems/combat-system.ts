@@ -88,7 +88,7 @@ export function calculateDamage(
   // Terrain modifier: look up defender's tile
   const tileIndex = defender.r * state.mapWidth + defender.q
   const terrainValue = tileIndex >= 0 && tileIndex < state.terrain.length
-    ? state.terrain[tileIndex]
+    ? state.terrain[tileIndex]!
     : 4 // default to plains
   const terrainDefense = TERRAIN_DEFENSE_MOD[terrainValue] ?? 1.0
   const terrainMod = 1.0 / terrainDefense

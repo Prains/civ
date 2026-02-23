@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { FactionId, LawNode } from '~/shared/game-types'
-import { LAW_TREE, getAvailableLaws } from '~/shared/law-tree'
+import type { FactionId, LawNode } from '#shared/game-types'
+import { LAW_TREE, getAvailableLaws } from '#shared/law-tree'
 
 interface Props {
   passedLaws: string[]

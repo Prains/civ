@@ -35,17 +35,25 @@ function formatEvent(event: GameEvent): { text: string, color: string, icon: str
 
 <template>
   <div class="flex flex-col h-full">
-    <h3 class="text-sm font-semibold mb-2">Журнал событий</h3>
+    <h3 class="text-sm font-semibold mb-2">
+      Журнал событий
+    </h3>
     <div class="flex-1 overflow-y-auto space-y-1">
       <div
         v-for="(event, index) in props.events.slice().reverse()"
         :key="index"
         class="flex items-center gap-2 text-xs p-1.5 rounded bg-neutral-800/50"
       >
-        <UIcon :name="formatEvent(event).icon" class="w-4 h-4 shrink-0" />
+        <UIcon
+          :name="formatEvent(event).icon"
+          class="w-4 h-4 shrink-0"
+        />
         <span>{{ formatEvent(event).text }}</span>
       </div>
-      <div v-if="props.events.length === 0" class="text-xs text-neutral-500 text-center py-4">
+      <div
+        v-if="props.events.length === 0"
+        class="text-xs text-neutral-500 text-center py-4"
+      >
         Нет событий
       </div>
     </div>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { FACTIONS } from '~/shared/faction-defs'
+import { FACTIONS } from '#shared/faction-defs'
 
 defineProps<{
   selectedFactionId: string | null
@@ -35,7 +35,7 @@ const factionDisplayData: Record<string, { nameRu: string, philosophyRu: string,
 
 const factions = Object.values(FACTIONS).map(f => ({
   ...f,
-  display: factionDisplayData[f.id]
+  display: factionDisplayData[f.id] as { nameRu: string, philosophyRu: string, bonusSummary: string }
 }))
 </script>
 

@@ -7,7 +7,7 @@ import { proposeLaw } from '../../game/systems/council-system'
 import { constructBuilding } from '../../game/systems/settlement-system'
 import { getUnitDef } from '../../../shared/unit-defs'
 import { UNIT_TYPES, BUILDING_TYPES, GAME_SPEEDS, COMBAT_POLICIES } from '../../../shared/game-types'
-import type { GameUnit, GameSpeed } from '../../../shared/game-types'
+import type { GameUnit, GameSpeed, UnitType, BuildingType, PlayerPolicies } from '../../../shared/game-types'
 
 // Helper to get game and player from context
 function getGameAndPlayer(gameId: string, userId: string) {
@@ -35,7 +35,7 @@ export const gameActionsRouter = {
       }
 
       // Check costs
-      const unitDef = getUnitDef(input.unitType)
+      const unitDef = getUnitDef(input.unitType as UnitType)
       if (player.resources.gold < unitDef.goldCost) {
         throw new ORPCError('BAD_REQUEST', { message: 'Not enough gold' })
       }
@@ -55,7 +55,7 @@ export const gameActionsRouter = {
       // Spawn unit at settlement
       const unit: GameUnit = {
         id: crypto.randomUUID(),
-        type: input.unitType,
+        type: input.unitType as UnitType,
         ownerId: context.user.id,
         q: settlement.q,
         r: settlement.r,
@@ -81,7 +81,7 @@ export const gameActionsRouter = {
     }))
     .handler(async ({ input, context }) => {
       const { manager } = getGameAndPlayer(input.gameId, context.user.id)
-      const result = constructBuilding(input.settlementId, input.buildingType, context.user.id, manager.state)
+      const result = constructBuilding(input.settlementId, input.buildingType as BuildingType, context.user.id, manager.state)
       if (!result) {
         throw new ORPCError('BAD_REQUEST', { message: 'Cannot construct building' })
       }
@@ -100,7 +100,7 @@ export const gameActionsRouter = {
     }))
     .handler(async ({ input, context }) => {
       const { player } = getGameAndPlayer(input.gameId, context.user.id)
-      player.policies = input.policies
+      player.policies = input.policies as PlayerPolicies
       return { success: true }
     }),
 

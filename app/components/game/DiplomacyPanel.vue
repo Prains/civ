@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DiplomaticStatus, DiplomacyState } from '~/shared/game-types'
+import type { DiplomaticStatus, DiplomacyState } from '#shared/game-types'
 
 interface Props {
   diplomacy: DiplomacyState[]

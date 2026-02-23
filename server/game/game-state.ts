@@ -71,7 +71,7 @@ const SETTLEMENT_NAMES = [
 let settlementNameIndex = 0
 
 function nextSettlementName(): string {
-  const name = SETTLEMENT_NAMES[settlementNameIndex % SETTLEMENT_NAMES.length]
+  const name = SETTLEMENT_NAMES[settlementNameIndex % SETTLEMENT_NAMES.length]!
   settlementNameIndex++
   return name
 }
@@ -182,9 +182,9 @@ export class GameStateManager {
       ]
 
       for (let i = 0; i < STARTING_UNITS.length; i++) {
-        const unitType = STARTING_UNITS[i]
+        const unitType = STARTING_UNITS[i]!
         const unitDef = getUnitDef(unitType)
-        const offset = unitOffsets[i % unitOffsets.length]
+        const offset = unitOffsets[i % unitOffsets.length]!
         const unitQ = spawnPos.q + offset.dq
         const unitR = spawnPos.r + offset.dr
 
@@ -216,8 +216,8 @@ export class GameStateManager {
     for (let i = 0; i < playerIds.length; i++) {
       for (let j = i + 1; j < playerIds.length; j++) {
         const diplomacy: DiplomacyState = {
-          player1Id: playerIds[i],
-          player2Id: playerIds[j],
+          player1Id: playerIds[i]!,
+          player2Id: playerIds[j]!,
           status: 'peace'
         }
         state.diplomacy.push(diplomacy)
@@ -305,7 +305,7 @@ function findSpawnPosition(
   const candidates: { q: number, r: number }[] = []
   for (let r = 2; r < mapHeight - 2; r++) {
     for (let q = 2; q < mapWidth - 2; q++) {
-      if (isLandTile(terrain[r * mapWidth + q])) {
+      if (isLandTile(terrain[r * mapWidth + q]!)) {
         candidates.push({ q, r })
       }
     }
@@ -321,7 +321,7 @@ function findSpawnPosition(
     const targetQ = Math.floor(mapWidth / 4)
     const targetR = Math.floor(mapHeight / 4)
 
-    let best = candidates[0]
+    let best = candidates[0]!
     let bestDist = Infinity
 
     for (const c of candidates) {
@@ -336,7 +336,7 @@ function findSpawnPosition(
   }
 
   // For subsequent players: maximize minimum distance from all existing positions
-  let bestCandidate = candidates[0]
+  let bestCandidate = candidates[0]!
   let bestMinDist = -1
 
   for (const c of candidates) {

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { FactionId, TechNode, TechEffect } from '~/shared/game-types'
-import { TECH_TREE, getEpochTechs, getAvailableTechs } from '~/shared/tech-tree'
-import { FACTIONS } from '~/shared/faction-defs'
+import type { FactionId, TechNode, TechEffect } from '#shared/game-types'
+import { TECH_TREE, getEpochTechs, getAvailableTechs } from '#shared/tech-tree'
+import { FACTIONS } from '#shared/faction-defs'
 
 interface Props {
   researchedTechs: string[]
@@ -324,7 +324,7 @@ const epochs = computed(() => [
                     class="size-2.5 text-neutral-500"
                   />
                   <span class="text-[9px] text-neutral-500 truncate">
-                    {{ TECH_TREE[tech.requires[0]]?.name }}
+                    {{ TECH_TREE[tech.requires[0]!]?.name }}
                   </span>
                 </div>
 

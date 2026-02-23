@@ -142,7 +142,7 @@ export function spawnInitialNeutrals(state: GameState): void {
   const forestTiles: HexCoord[] = []
   for (let r = 0; r < state.mapHeight; r++) {
     for (let q = 0; q < state.mapWidth; q++) {
-      if (state.terrain[r * state.mapWidth + q] === TERRAIN_FOREST) {
+      if (state.terrain[r * state.mapWidth + q]! === TERRAIN_FOREST) {
         forestTiles.push({ q, r })
       }
     }
@@ -156,13 +156,13 @@ export function spawnInitialNeutrals(state: GameState): void {
   // Shuffle forest tiles and pick the first N
   for (let i = forestTiles.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1))
-    const temp = forestTiles[i]
-    forestTiles[i] = forestTiles[j]
+    const temp = forestTiles[i]!
+    forestTiles[i] = forestTiles[j]!
     forestTiles[j] = temp
   }
 
   for (let i = 0; i < animalCount; i++) {
-    const tile = forestTiles[i]
+    const tile = forestTiles[i]!
     const animal = createAnimalUnit(tile.q, tile.r)
     state.neutralUnits.set(animal.id, animal)
   }
@@ -176,7 +176,7 @@ export function spawnInitialNeutrals(state: GameState): void {
   for (let r = 0; r < state.mapHeight; r++) {
     for (let q = 0; q < state.mapWidth; q++) {
       const idx = r * state.mapWidth + q
-      if (!isLandTile(state.terrain[idx])) continue
+      if (!isLandTile(state.terrain[idx]!)) continue
 
       // Must be far from all player positions
       let farEnough = true
@@ -195,8 +195,8 @@ export function spawnInitialNeutrals(state: GameState): void {
   // Shuffle candidates
   for (let i = campCandidates.length - 1; i > 0; i--) {
     const j = Math.floor(random() * (i + 1))
-    const temp = campCandidates[i]
-    campCandidates[i] = campCandidates[j]
+    const temp = campCandidates[i]!
+    campCandidates[i] = campCandidates[j]!
     campCandidates[j] = temp
   }
 
@@ -246,7 +246,7 @@ function spawnBarbarianUnitsAtCamp(state: GameState, campPos: HexCoord): void {
     if (q < 0 || q >= state.mapWidth || r < 0 || r >= state.mapHeight) continue
 
     const idx = r * state.mapWidth + q
-    if (!isLandTile(state.terrain[idx])) continue
+    if (!isLandTile(state.terrain[idx]!)) continue
 
     const barbarian = createBarbarianUnit(q, r)
     state.neutralUnits.set(barbarian.id, barbarian)
@@ -344,7 +344,7 @@ function tickBarbarianAI(unit: GameUnit, state: GameState): void {
 
     // Use tick + unit position as a simple pseudo-random selector
     const idx = Math.abs(state.tick + unit.q * 7 + unit.r * 13) % patrolOffsets.length
-    const offset = patrolOffsets[idx]
+    const offset = patrolOffsets[idx]!
     const patrolQ = unit.q + offset.q
     const patrolR = unit.r + offset.r
 
@@ -353,7 +353,7 @@ function tickBarbarianAI(unit: GameUnit, state: GameState): void {
       patrolQ >= 0 && patrolQ < state.mapWidth
       && patrolR >= 0 && patrolR < state.mapHeight
       && hexDistance(patrolQ, patrolR, camp.q, camp.r) <= BARBARIAN_PATROL_RADIUS
-      && isLandTile(state.terrain[patrolR * state.mapWidth + patrolQ])
+      && isLandTile(state.terrain[patrolR * state.mapWidth + patrolQ]!)
     ) {
       unit.state = 'moving'
       unit.targetQ = patrolQ
@@ -451,14 +451,14 @@ function stepToward(fromQ: number, fromR: number, toQ: number, toR: number): Hex
     { q: fromQ - 1, r: fromR + 1 }
   ]
 
-  let bestNeighbor = neighbors[0]
-  let bestDist = hexDistance(neighbors[0].q, neighbors[0].r, toQ, toR)
+  let bestNeighbor = neighbors[0]!
+  let bestDist = hexDistance(neighbors[0]!.q, neighbors[0]!.r, toQ, toR)
 
   for (let i = 1; i < neighbors.length; i++) {
-    const dist = hexDistance(neighbors[i].q, neighbors[i].r, toQ, toR)
+    const dist = hexDistance(neighbors[i]!.q, neighbors[i]!.r, toQ, toR)
     if (dist < bestDist) {
       bestDist = dist
-      bestNeighbor = neighbors[i]
+      bestNeighbor = neighbors[i]!
     }
   }
 
@@ -500,7 +500,7 @@ function findNewCampLocation(state: GameState): HexCoord | null {
   for (let r = 0; r < state.mapHeight; r++) {
     for (let q = 0; q < state.mapWidth; q++) {
       const idx = r * state.mapWidth + q
-      if (!isLandTile(state.terrain[idx])) continue
+      if (!isLandTile(state.terrain[idx]!)) continue
 
       // Check distance from all settlements
       let tooCloseToSettlement = false

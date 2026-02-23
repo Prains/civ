@@ -56,7 +56,7 @@ export function findPath(
 
   // Check that the target tile is passable
   const targetIdx = toR * mapWidth + toQ
-  if (isImpassable(terrain[targetIdx])) {
+  if (isImpassable(terrain[targetIdx]!)) {
     return []
   }
 
@@ -93,7 +93,7 @@ export function findPath(
 
       // Passability check
       const tileIdx = neighbor.r * mapWidth + neighbor.q
-      if (isImpassable(terrain[tileIdx])) {
+      if (isImpassable(terrain[tileIdx]!)) {
         continue
       }
 
@@ -163,7 +163,7 @@ export function tickMovement(state: GameState): void {
     // Advance along the path by effectiveSpeed steps
     // path[0] is the current position, so we start moving to path[1]
     const stepsToTake = Math.min(effectiveSpeed, path.length - 1)
-    const destination = path[stepsToTake]
+    const destination = path[stepsToTake]!
 
     unit.q = destination.q
     unit.r = destination.r

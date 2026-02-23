@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import type { GameSettlement, Resources, BuildingType, UnitType } from '~/shared/game-types'
-import { BUILDING_DEFS } from '~/shared/building-defs'
-import { UNIT_DEFS } from '~/shared/unit-defs'
+import type { GameSettlement, Resources, BuildingType, UnitType } from '#shared/game-types'
+import { BUILDING_DEFS } from '#shared/building-defs'
+import { UNIT_DEFS } from '#shared/unit-defs'
 
 interface Props {
   settlement: GameSettlement

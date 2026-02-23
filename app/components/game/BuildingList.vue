@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { BuildingType } from '~/shared/game-types'
-import { BUILDING_DEFS } from '~/shared/building-defs'
+import type { BuildingType } from '#shared/game-types'
+import { BUILDING_DEFS } from '#shared/building-defs'
 
 interface Props {
   buildings: BuildingType[]

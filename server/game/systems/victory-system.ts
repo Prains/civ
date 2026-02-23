@@ -90,7 +90,7 @@ export function checkVictory(state: GameState): GameEvent | null {
   // Check if only one player left
   const activePlayers = [...state.players.values()].filter(p => !p.eliminated)
   if (activePlayers.length === 1) {
-    return { type: 'victory', winnerId: activePlayers[0].userId, victoryType: 'last_standing' }
+    return { type: 'victory', winnerId: activePlayers[0]!.userId, victoryType: 'last_standing' }
   }
 
   for (const [playerId, player] of state.players) {

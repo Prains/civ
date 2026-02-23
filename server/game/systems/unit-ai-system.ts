@@ -219,7 +219,7 @@ function findNearestUnexplored(
 
   for (let r = 0; r < state.mapHeight; r++) {
     for (let q = 0; q < state.mapWidth; q++) {
-      if (player.fogMap[r * state.mapWidth + q] === 0) {
+      if (player.fogMap[r * state.mapWidth + q]! === 0) {
         const dist = hexDistance(unit.q, unit.r, q, r)
         if (dist < bestDist) {
           bestDist = dist
@@ -255,7 +255,7 @@ function findNearestResourceTile(
         if (tq < 0 || tq >= state.mapWidth || tr < 0 || tr >= state.mapHeight) continue
 
         const terrainIdx = tr * state.mapWidth + tq
-        if (RESOURCE_TERRAIN.has(state.terrain[terrainIdx])) {
+        if (RESOURCE_TERRAIN.has(state.terrain[terrainIdx]!)) {
           const dist = hexDistance(unit.q, unit.r, tq, tr)
           if (dist < bestDist) {
             bestDist = dist
@@ -281,7 +281,7 @@ function findNearestResourceTile(
           if (tq < 0 || tq >= state.mapWidth || tr < 0 || tr >= state.mapHeight) continue
 
           const terrainIdx = tr * state.mapWidth + tq
-          if (isLandTile(state.terrain[terrainIdx])) {
+          if (isLandTile(state.terrain[terrainIdx]!)) {
             const dist = hexDistance(unit.q, unit.r, tq, tr)
             if (dist < bestDist) {
               bestDist = dist
@@ -322,7 +322,7 @@ function findPatrolTarget(
       if (tq < 0 || tq >= state.mapWidth || tr < 0 || tr >= state.mapHeight) continue
 
       const terrainIdx = tr * state.mapWidth + tq
-      if (!isLandTile(state.terrain[terrainIdx])) continue
+      if (!isLandTile(state.terrain[terrainIdx]!)) continue
 
       const dist = hexDistance(unit.q, unit.r, tq, tr)
       if (dist < bestDist && dist > 0) {
@@ -351,7 +351,7 @@ function findSettleLocation(
   for (let r = 0; r < state.mapHeight; r++) {
     for (let q = 0; q < state.mapWidth; q++) {
       const terrainIdx = r * state.mapWidth + q
-      if (!isLandTile(state.terrain[terrainIdx])) continue
+      if (!isLandTile(state.terrain[terrainIdx]!)) continue
 
       // Check distance from all existing settlements
       let tooClose = false
@@ -400,7 +400,7 @@ function findBuildTarget(
         if (tq < 0 || tq >= state.mapWidth || tr < 0 || tr >= state.mapHeight) continue
 
         const terrainIdx = tr * state.mapWidth + tq
-        if (!isLandTile(state.terrain[terrainIdx])) continue
+        if (!isLandTile(state.terrain[terrainIdx]!)) continue
 
         // Check if tile already has an improvement
         const key = `${tq},${tr}`
@@ -457,7 +457,7 @@ export function tickBuilderImprovements(state: GameState): void {
 
     // Determine improvement type based on terrain
     const terrainIdx = unit.r * state.mapWidth + unit.q
-    const terrainValue = state.terrain[terrainIdx]
+    const terrainValue = state.terrain[terrainIdx]!
     const improvement = getImprovementForTerrain(terrainValue)
 
     // Place the improvement
@@ -526,13 +526,13 @@ export function decideAction(
       // If enemies visible, attack the closest one
       const enemies = findVisibleEnemies(unit, state)
       if (enemies.length > 0) {
-        let closestEnemy = enemies[0]
-        let closestDist = hexDistance(unit.q, unit.r, enemies[0].q, enemies[0].r)
+        let closestEnemy = enemies[0]!
+        let closestDist = hexDistance(unit.q, unit.r, enemies[0]!.q, enemies[0]!.r)
         for (let i = 1; i < enemies.length; i++) {
-          const d = hexDistance(unit.q, unit.r, enemies[i].q, enemies[i].r)
+          const d = hexDistance(unit.q, unit.r, enemies[i]!.q, enemies[i]!.r)
           if (d < closestDist) {
             closestDist = d
-            closestEnemy = enemies[i]
+            closestEnemy = enemies[i]!
           }
         }
         return { type: 'attack', targetQ: closestEnemy.q, targetR: closestEnemy.r }
