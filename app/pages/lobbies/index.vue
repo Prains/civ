@@ -31,7 +31,7 @@ async function handleSignOut() {
           v-if="session.data?.user"
           variant="subtle"
         >
-          {{ session.data.user.name }}
+          {{ session.data.user.isAnonymous ? 'Гость' : session.data.user.name }}
         </UBadge>
       </div>
       <div class="flex gap-2">
@@ -42,6 +42,15 @@ async function handleSignOut() {
           @click="createLobby"
         />
         <UButton
+          v-if="session.data?.user?.isAnonymous"
+          icon="i-lucide-log-in"
+          label="Войти"
+          color="neutral"
+          variant="ghost"
+          @click="navigateTo('/auth/sign-in')"
+        />
+        <UButton
+          v-else
           icon="i-lucide-log-out"
           color="neutral"
           variant="ghost"

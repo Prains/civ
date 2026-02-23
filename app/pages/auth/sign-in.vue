@@ -77,6 +77,15 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
             :title="error"
           />
         </template>
+
+        <template #footer>
+          <ULink
+            to="/lobbies"
+            class="text-sm text-neutral-500 hover:text-neutral-700"
+          >
+            Продолжить как гость
+          </ULink>
+        </template>
       </UAuthForm>
     </UPageCard>
   </div>
