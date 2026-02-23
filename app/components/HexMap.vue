@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { Application, Container, Graphics, Text, TextStyle } from 'pixi.js'
+import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js'
 import type { HexMapData } from '~/utils/hex-map-data'
 import { createHexTextureAtlas, type HexTextureAtlas } from '~/utils/hex-texture-atlas'
 import { createTilePool, type TilePool } from '~/utils/hex-tile-pool'
 import { createShadowPool, type ShadowPool } from '~/utils/hex-shadow'
 import { createFeaturePool, type FeaturePool } from '~/utils/hex-feature-pool'
-import { createWaterAnimator, type WaterAnimator } from '~/utils/hex-water-animator'
+import { createAnimationManager, type AnimationManager } from '~/utils/hex-animation-manager'
+import { createParticleTextures, type ParticleTextures } from '~/utils/hex-particle-textures'
+import { PARTICLE_CONFIGS } from '~/utils/hex-animation-config'
 
 const props = defineProps<{
   mapData: HexMapData
@@ -53,9 +55,22 @@ onMounted(async () => {
   const featurePool: FeaturePool = createFeaturePool()
   worldContainer.addChild(featurePool.container)
 
-  // Water animator
-  const waterAnimator: WaterAnimator = createWaterAnimator()
-  let frameCount = 0
+  // Animation manager and particle textures
+  const animationManager: AnimationManager = createAnimationManager()
+  const particleTextures: ParticleTextures = createParticleTextures()
+
+  // Layer 4: particle container (above features)
+  const particleContainer = new Container()
+  worldContainer.addChild(particleContainer)
+
+  // Particle sprite pool
+  const particleSprites: Sprite[] = []
+  const PARTICLE_POOL_SIZE = 200
+  for (let i = 0; i < PARTICLE_POOL_SIZE; i++) {
+    const s = new Sprite({ anchor: { x: 0.5, y: 0.5 }, visible: false })
+    particleContainer.addChild(s)
+    particleSprites.push(s)
+  }
 
   // Layer 5: LOD fallback graphics (hidden by default)
   const lodGraphics = new Graphics()
@@ -144,11 +159,55 @@ onMounted(async () => {
     const dt = ticker.deltaTime / 60 // normalize to seconds
     updateCamera(dt)
     redrawVisibleTiles()
-    frameCount++
 
-    // Water animation (runs even without visible range change)
-    if (camera.zoom >= 0.25) {
-      waterAnimator.update(frameCount, tilePool, props.mapData, textureAtlas)
+    // Count visible tiles per terrain for particle spawning
+    const visibleTilesPerTerrain = new Map<number, number>()
+    for (const [, entry] of tilePool.getActiveTiles()) {
+      const t = getTerrain(props.mapData, entry.q, entry.r)
+      visibleTilesPerTerrain.set(t, (visibleTilesPerTerrain.get(t) ?? 0) + 1)
+    }
+
+    // Update animation system
+    animationManager.update({
+      deltaMs: ticker.deltaMS,
+      zoom: camera.zoom,
+      activeTiles: tilePool.getActiveTiles(),
+      activeWaterTiles: tilePool.getActiveWaterTiles(),
+      activeFeatures: featurePool.getActiveFeatures(),
+      getTerrainId: (q: number, r: number) => getTerrain(props.mapData, q, r),
+      waterFrames: (terrainId: number) => textureAtlas.getWaterFrames(terrainId as 0 | 1),
+      visibleTilesPerTerrain
+    })
+
+    // Sync particle sprites with particle system data
+    const particles = animationManager.particles.getParticles()
+    const halfW = app.screen.width / camera.zoom / 2
+    const halfH = app.screen.height / camera.zoom / 2
+    const texMap = {
+      dot: particleTextures.dot,
+      flake: particleTextures.flake,
+      spark: particleTextures.spark
+    } as const
+
+    for (let i = 0; i < particleSprites.length; i++) {
+      const sprite = particleSprites[i]!
+      if (i < particles.length) {
+        const p = particles[i]!
+        sprite.visible = true
+        // Use particle index as deterministic seed for initial position within viewport;
+        // p.x/p.y are cumulative drift from that position
+        sprite.x = camera.x + p.x - halfW + (halfW * 2) * ((i * 7919 % 1000) / 1000)
+        sprite.y = camera.y + p.y - halfH + (halfH * 2) * ((i * 73856 % 1000) / 1000)
+        sprite.alpha = p.alpha
+        sprite.scale.set(p.scale)
+        const config = PARTICLE_CONFIGS[p.terrainId]
+        if (config) {
+          sprite.tint = config.tint
+          sprite.texture = texMap[config.texture]
+        }
+      } else {
+        sprite.visible = false
+      }
     }
 
     // Update FPS every 0.5s
@@ -161,7 +220,8 @@ onMounted(async () => {
 
   cleanup = () => {
     destroyCamera()
-    waterAnimator.destroy()
+    animationManager.particles.clear()
+    particleTextures.destroy()
     featurePool.destroy()
     shadowPool.destroy()
     tilePool.destroy()

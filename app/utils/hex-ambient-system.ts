@@ -93,7 +93,7 @@ export function createAmbientSystem(): AmbientSystem {
 
       for (let i = 0; i < sprites.length; i++) {
         const seed = hashSeed(q, r) + i * 7919
-        applyAmbientToSprite(sprites[i], config, totalTime, seed)
+        applyAmbientToSprite(sprites[i]!, config, totalTime, seed)
       }
     }
   }

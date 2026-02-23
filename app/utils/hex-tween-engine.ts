@@ -79,8 +79,8 @@ export function createTweenEngine(): TweenEngine {
     const entry = acquireEntry()
     entry.target = target
     entry.props = Object.keys(endProps)
-    entry.startValues = entry.props.map(p => target[p])
-    entry.endValues = entry.props.map(p => endProps[p])
+    entry.startValues = entry.props.map(p => target[p]!)
+    entry.endValues = entry.props.map(p => endProps[p]!)
     entry.elapsed = 0
     entry.duration = options.duration
     entry.easing = options.easing
@@ -100,13 +100,13 @@ export function createTweenEngine(): TweenEngine {
 
   function cancel(target: Record<string, number>): void {
     for (let i = entries.length - 1; i >= 0; i--) {
-      if (entries[i].target === target) {
-        releaseEntry(entries[i])
+      if (entries[i]!.target === target) {
+        releaseEntry(entries[i]!)
         entries.splice(i, 1)
       }
     }
     for (let i = loopingChains.length - 1; i >= 0; i--) {
-      const lc = loopingChains[i]
+      const lc = loopingChains[i]!
       if (lc.steps.some(s => s.target === target)) {
         if (lc.currentEntry) {
           const idx = entries.indexOf(lc.currentEntry)
@@ -122,7 +122,7 @@ export function createTweenEngine(): TweenEngine {
 
   function startChainStep(steps: ChainStep[], index: number): void {
     if (index >= steps.length) return
-    const step = steps[index]
+    const step = steps[index]!
     startTween(step.target, step.endProps, {
       ...step.options,
       onComplete: () => {
@@ -133,7 +133,7 @@ export function createTweenEngine(): TweenEngine {
   }
 
   function startLoopStep(lc: LoopingChain): void {
-    const step = lc.steps[lc.currentIndex]
+    const step = lc.steps[lc.currentIndex]!
     lc.currentEntry = startTween(step.target, step.endProps, {
       ...step.options,
       onComplete: () => {
@@ -171,7 +171,7 @@ export function createTweenEngine(): TweenEngine {
 
   function update(deltaMs: number): void {
     for (let i = entries.length - 1; i >= 0; i--) {
-      const entry = entries[i]
+      const entry = entries[i]!
       if (!entry.active) continue
 
       entry.elapsed += deltaMs
@@ -179,15 +179,15 @@ export function createTweenEngine(): TweenEngine {
       const easedProgress = easings[entry.easing](progress)
 
       for (let p = 0; p < entry.props.length; p++) {
-        const start = entry.startValues[p]
-        const end = entry.endValues[p]
-        entry.target[entry.props[p]] = start + (end - start) * easedProgress
+        const start = entry.startValues[p]!
+        const end = entry.endValues[p]!
+        entry.target[entry.props[p]!] = start + (end - start) * easedProgress
       }
 
       if (progress >= 1) {
         // Clamp to exact end values
         for (let p = 0; p < entry.props.length; p++) {
-          entry.target[entry.props[p]] = entry.endValues[p]
+          entry.target[entry.props[p]!] = entry.endValues[p]!
         }
         const onComplete = entry.onComplete
         releaseEntry(entry)

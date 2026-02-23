@@ -34,6 +34,7 @@ export function getFeaturesForTile(terrainId: number, q: number, r: number): Fea
 export interface FeaturePool {
   container: Container
   update(range: VisibleRange, mapData: HexMapData): void
+  getActiveFeatures(): Map<string, Sprite[]>
   destroy(): void
 }
 
@@ -62,6 +63,8 @@ export function createFeaturePool(): FeaturePool {
 
   return {
     container,
+
+    getActiveFeatures: () => active,
 
     update(range: VisibleRange, mapData: HexMapData) {
       const newKeys = new Set<string>()

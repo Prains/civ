@@ -66,10 +66,10 @@ export function createParticleSystem(): ParticleSystem {
   }
 
   function releaseParticle(index: number): void {
-    const p = particles[index]
+    const p = particles[index]!
     p.active = false
     pool.push(p)
-    particles[index] = particles[particles.length - 1]
+    particles[index] = particles[particles.length - 1]!
     particles.pop()
   }
 
@@ -101,7 +101,7 @@ export function createParticleSystem(): ParticleSystem {
 
     // Update existing particles
     for (let i = particles.length - 1; i >= 0; i--) {
-      const p = particles[i]
+      const p = particles[i]!
       p.elapsed += deltaMs
       if (p.elapsed >= p.lifetime) {
         releaseParticle(i)

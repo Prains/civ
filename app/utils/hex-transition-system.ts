@@ -46,7 +46,7 @@ export function createTransitionSystem(tween: TweenEngine): TransitionSystem {
   const originalUpdate = tween.update.bind(tween)
   tween.update = (deltaMs: number) => {
     for (let i = animations.length - 1; i >= 0; i--) {
-      const done = animations[i].update(deltaMs)
+      const done = animations[i]!.update(deltaMs)
       if (done) {
         animations.splice(i, 1)
       }
@@ -64,13 +64,13 @@ export function createTransitionSystem(tween: TweenEngine): TransitionSystem {
       return
     }
 
-    sprite.x = path[0].x
-    sprite.y = path[0].y
+    sprite.x = path[0]!.x
+    sprite.y = path[0]!.y
 
     const segments: Array<{ startX: number, startY: number, endX: number, endY: number, duration: number }> = []
     for (let i = 1; i < path.length; i++) {
-      const prev = path[i - 1]
-      const next = path[i]
+      const prev = path[i - 1]!
+      const next = path[i]!
       const dx = next.x - prev.x
       const dy = next.y - prev.y
       const distance = Math.sqrt(dx * dx + dy * dy)
@@ -93,7 +93,7 @@ export function createTransitionSystem(tween: TweenEngine): TransitionSystem {
         segmentElapsed += deltaMs
 
         while (currentSegment < segments.length) {
-          const seg = segments[currentSegment]
+          const seg = segments[currentSegment]!
 
           if (segmentElapsed >= seg.duration) {
             sprite.x = seg.endX
@@ -163,7 +163,7 @@ export function createTransitionSystem(tween: TweenEngine): TransitionSystem {
     const step = Math.max(options.stagger, options.duration)
 
     for (let i = 0; i < sprites.length; i++) {
-      const sprite = sprites[i]
+      const sprite = sprites[i]!
       const delay = i === 0 ? 0 : options.stagger + (i - 1) * step
       let elapsed = 0
 
