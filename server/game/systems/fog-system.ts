@@ -1,23 +1,14 @@
 import type { GameState } from '../../../shared/game-types'
 
 /**
- * Processes fog of war for all non-eliminated players each tick.
+ * Processes fog of war for all players each tick.
  * - Resets all "visible" (2) tiles to "explored" (1)
- * - Re-reveals tiles around own units (by visionRange) and settlements (by gatherRadius)
+ * - Re-reveals tiles around own settlements (by gatherRadius)
  */
 export function tickFog(state: GameState): void {
   for (const [playerId, player] of state.players) {
-    if (player.eliminated) continue
-
     // Reset all "visible" (2) to "explored" (1), keep "explored" (1) and "unexplored" (0) as-is
     resetVisibility(player.fogMap, state.mapWidth, state.mapHeight)
-
-    // Mark tiles visible from own units
-    for (const unit of state.units.values()) {
-      if (unit.ownerId === playerId) {
-        revealTiles(player.fogMap, unit.q, unit.r, unit.visionRange, state.mapWidth, state.mapHeight)
-      }
-    }
 
     // Mark tiles visible from own settlements
     for (const settlement of state.settlements.values()) {

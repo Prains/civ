@@ -109,8 +109,9 @@ export function useHexCamera(
   canvas.addEventListener('wheel', onWheel, { passive: false })
 
   // --- Edge scroll tracking ---
-  let mouseScreenX = 0
-  let mouseScreenY = 0
+  // Start at center of viewport to prevent edge scrolling before first mouse move
+  let mouseScreenX = window.innerWidth / 2
+  let mouseScreenY = window.innerHeight / 2
 
   // --- Camera clamp ---
   function clampCamera() {

@@ -57,23 +57,18 @@ const create = authedProcedure
       throw new ORPCError('BAD_REQUEST', { message: 'Вы уже в лобби' })
     }
 
-    const lobby = await prisma.$transaction(async (tx) => {
-      const created = await tx.lobby.create({
-        data: { hostId: user.id }
-      })
-
-      await tx.lobbyMember.create({
-        data: { lobbyId: created.id, userId: user.id }
-      })
-
-      return tx.lobby.findUniqueOrThrow({
-        where: { id: created.id },
-        include: {
-          members: {
-            include: { user: { select: { id: true, name: true } } }
-          }
+    const lobby = await prisma.lobby.create({
+      data: {
+        hostId: user.id,
+        members: {
+          create: { userId: user.id }
         }
-      })
+      },
+      include: {
+        members: {
+          include: { user: { select: { id: true, name: true } } }
+        }
+      }
     })
 
     return {

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import type { GameState, GamePlayer, GameEvent, Resources, ClientPlayerState } from '../../shared/game-types'
+import type { GameState, GamePlayer, GameEvent, ClientPlayerState } from '../../shared/game-types'
 import { startGame, stopGame, getGame, pauseGame, resumeGame, changeSpeed } from '../../server/game/game-registry'
 import { publisher } from '../../server/rpc/publisher'
 import { executeTick } from '../../server/game/game-tick'
@@ -19,30 +19,10 @@ vi.mock('../../server/game/game-tick', () => ({
 
 // --- Helpers ---
 
-function makeResources(overrides: Partial<Resources> = {}): Resources {
-  return { food: 0, production: 0, gold: 0, science: 0, culture: 0, ...overrides }
-}
-
 function makePlayer(overrides: Partial<GamePlayer> = {}): GamePlayer {
   return {
     userId: 'p1',
     factionId: 'solar_empire',
-    resources: makeResources({ food: 50, production: 30, gold: 30 }),
-    resourceIncome: makeResources(),
-    resourceUpkeep: makeResources(),
-    policies: { aggression: 50, expansion: 50, spending: 50, combatPolicy: 'defensive' },
-    advisors: [
-      { type: 'general', loyalty: 50 },
-      { type: 'treasurer', loyalty: 50 },
-      { type: 'priest', loyalty: 50 },
-      { type: 'scholar', loyalty: 50 },
-      { type: 'tribune', loyalty: 50 }
-    ],
-    researchedTechs: [],
-    currentResearch: null,
-    researchProgress: 0,
-    passedLaws: [],
-    eliminated: false,
     fogMap: new Uint8Array(400).fill(0),
     ...overrides
   }
@@ -58,13 +38,8 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
     mapHeight: 20,
     terrain: new Uint8Array(400).fill(4),
     elevation: new Uint8Array(400).fill(128),
-    improvements: new Map(),
     players: new Map([['p1', makePlayer()]]),
-    units: new Map(),
     settlements: new Map(),
-    diplomacy: [],
-    neutralUnits: new Map(),
-    barbarianCamps: [],
     ...overrides
   }
 }
@@ -72,19 +47,11 @@ function makeGameState(overrides: Partial<GameState> = {}): GameState {
 function makeMockPlayerView(): ClientPlayerState {
   return {
     tick: 1,
-    resources: makeResources(),
-    resourceIncome: makeResources(),
-    resourceUpkeep: makeResources(),
-    policies: { aggression: 50, expansion: 50, spending: 50, combatPolicy: 'defensive' },
-    advisors: [],
-    currentResearch: null,
-    researchProgress: 0,
-    researchedTechs: [],
-    passedLaws: [],
-    visibleUnits: [],
+    factionId: 'solar_empire',
+    paused: false,
+    speed: 1,
     visibleSettlements: [],
-    fogMap: [],
-    diplomacy: []
+    fogMap: []
   }
 }
 
@@ -342,8 +309,7 @@ describe('game-registry', () => {
 
     it('publishes discrete game events on the game channel', () => {
       const mockEvents: GameEvent[] = [
-        { type: 'combatResult', attackerId: 'a1', defenderId: 'd1', damage: 10, killed: false },
-        { type: 'techResearched', techId: 'agriculture', playerId: 'p1' }
+        { type: 'settlementFounded', settlement: { id: 's1', ownerId: 'p1', name: 'Test', q: 5, r: 5, gatherRadius: 2, isCapital: false } }
       ]
       vi.mocked(executeTick).mockReturnValueOnce(mockEvents)
 
@@ -357,9 +323,8 @@ describe('game-registry', () => {
         ([channel]) => channel === 'game:events-test'
       )
 
-      expect(eventCalls.length).toBe(2)
+      expect(eventCalls.length).toBe(1)
       expect(eventCalls[0][1]).toEqual(mockEvents[0])
-      expect(eventCalls[1][1]).toEqual(mockEvents[1])
 
       // Clean up
       stopGame('events-test')

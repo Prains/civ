@@ -12,30 +12,14 @@ describe('faction-defs', () => {
 
   it('each faction has required fields', () => {
     for (const faction of Object.values(FACTIONS)) {
+      expect(faction.id).toBeTruthy()
       expect(faction.name).toBeTruthy()
-      expect(faction.resourceModifiers).toBeDefined()
-      expect(faction.aiModifiers).toBeDefined()
-      expect(faction.uniqueUnitType).toBeTruthy()
-      expect(faction.uniqueBuildingType).toBeTruthy()
-      expect(faction.startingAdvisorLoyalty).toBeDefined()
+      expect(faction.description).toBeTruthy()
     }
   })
 
   it('getFaction returns correct faction', () => {
     const solar = getFaction('solar_empire')
     expect(solar.name).toBe('Solar Empire')
-    expect(solar.resourceModifiers.production).toBe(1.2)
-  })
-
-  it('Solar Empire has production bonus and science penalty', () => {
-    const f = getFaction('solar_empire')
-    expect(f.resourceModifiers.production).toBeGreaterThan(1)
-    expect(f.resourceModifiers.science).toBeLessThan(1)
-  })
-
-  it('Merchant League has gold bonus and combat penalty', () => {
-    const f = getFaction('merchant_league')
-    expect(f.resourceModifiers.gold).toBeGreaterThan(1)
-    expect(f.combatStrengthModifier).toBeLessThan(1)
   })
 })

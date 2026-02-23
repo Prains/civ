@@ -57,6 +57,12 @@ export function hexToPixel(q: number, r: number): { x: number, y: number } {
   }
 }
 
+export function pixelToHex(px: number, py: number): { q: number, r: number } {
+  const q = px / (HEX_SIZE * 1.5)
+  const r = (py / HEX_SIZE - SQRT3 / 2 * q) / SQRT3
+  return { q: Math.round(q), r: Math.round(r) }
+}
+
 // Flat-top hex neighbors (offset coordinates for flat-top hex grid)
 export function getHexNeighbors(q: number, r: number): Array<[number, number]> {
   return [

@@ -1,21 +1,12 @@
 import type {
   GameState,
   GamePlayer,
-  GameUnit,
   GameSettlement,
   ClientPlayerState,
   FactionId,
-  GameSpeed,
-  UnitType,
-  AdvisorType,
-  Resources,
-  DiplomacyState
+  GameSpeed
 } from '../../shared/game-types'
-import { ADVISOR_TYPES } from '../../shared/game-types'
-import { getFaction } from '../../shared/faction-defs'
-import { getUnitDef } from '../../shared/unit-defs'
-import { SETTLEMENT_DEFS } from '../../shared/settlement-defs'
-import { spawnInitialNeutrals } from './systems/neutral-system'
+import { STARTING_GATHER_RADIUS } from '../../shared/settlement-defs'
 
 // --- Config for game creation ---
 
@@ -28,26 +19,6 @@ export interface GameCreateConfig {
   players: { userId: string, factionId: FactionId }[]
   speed: GameSpeed
 }
-
-// --- Constants ---
-
-const STARTING_RESOURCES: Resources = {
-  food: 50,
-  production: 30,
-  gold: 30,
-  science: 0,
-  culture: 0
-}
-
-const ZERO_RESOURCES: Resources = {
-  food: 0,
-  production: 0,
-  gold: 0,
-  science: 0,
-  culture: 0
-}
-
-const STARTING_UNITS: UnitType[] = ['scout', 'scout', 'gatherer', 'builder']
 
 const MIN_SPAWN_DISTANCE = 15
 
@@ -98,13 +69,8 @@ export class GameStateManager {
       mapHeight: config.mapHeight,
       terrain: config.terrain,
       elevation: config.elevation,
-      improvements: new Map(),
       players: new Map(),
-      units: new Map(),
-      settlements: new Map(),
-      diplomacy: [],
-      neutralUnits: new Map(),
-      barbarianCamps: []
+      settlements: new Map()
     }
 
     // Find spawn positions for all players
@@ -120,119 +86,38 @@ export class GameStateManager {
       spawnPositions.push(spawnPos)
 
       // Create the player state
-      const faction = getFaction(playerConfig.factionId)
       const fogMap = new Uint8Array(config.mapWidth * config.mapHeight).fill(FOG_UNEXPLORED)
-
-      const advisors = ADVISOR_TYPES.map((type: AdvisorType) => ({
-        type,
-        loyalty: faction.startingAdvisorLoyalty[type]
-      }))
 
       const player: GamePlayer = {
         userId: playerConfig.userId,
         factionId: playerConfig.factionId,
-        resources: { ...STARTING_RESOURCES },
-        resourceIncome: { ...ZERO_RESOURCES },
-        resourceUpkeep: { ...ZERO_RESOURCES },
-        policies: {
-          aggression: 50,
-          expansion: 50,
-          spending: 50,
-          combatPolicy: 'defensive'
-        },
-        advisors,
-        researchedTechs: [],
-        currentResearch: null,
-        researchProgress: 0,
-        passedLaws: [],
-        eliminated: false,
         fogMap
       }
 
       state.players.set(playerConfig.userId, player)
 
       // Create starting settlement (capital)
-      const outpostDef = SETTLEMENT_DEFS.outpost
       const settlement: GameSettlement = {
         id: crypto.randomUUID(),
         ownerId: playerConfig.userId,
         name: nextSettlementName(),
-        tier: 'outpost',
         q: spawnPos.q,
         r: spawnPos.r,
-        buildings: [],
-        buildingSlots: outpostDef.buildingSlots,
-        gatherRadius: outpostDef.gatherRadius,
-        isCapital: true,
-        hp: outpostDef.maxHp,
-        maxHp: outpostDef.maxHp,
-        defense: outpostDef.baseDefense
+        gatherRadius: STARTING_GATHER_RADIUS,
+        isCapital: true
       }
       state.settlements.set(settlement.id, settlement)
 
       // Reveal fog around settlement
-      revealFog(fogMap, config.mapWidth, config.mapHeight, spawnPos.q, spawnPos.r, outpostDef.gatherRadius + 1)
-
-      // Create starting units around spawn position
-      const unitOffsets = [
-        { dq: 1, dr: 0 },
-        { dq: -1, dr: 0 },
-        { dq: 0, dr: 1 },
-        { dq: 0, dr: -1 }
-      ]
-
-      for (let i = 0; i < STARTING_UNITS.length; i++) {
-        const unitType = STARTING_UNITS[i]!
-        const unitDef = getUnitDef(unitType)
-        const offset = unitOffsets[i % unitOffsets.length]!
-        const unitQ = spawnPos.q + offset.dq
-        const unitR = spawnPos.r + offset.dr
-
-        const unit: GameUnit = {
-          id: crypto.randomUUID(),
-          type: unitType,
-          ownerId: playerConfig.userId,
-          q: unitQ,
-          r: unitR,
-          hp: unitDef.maxHp,
-          maxHp: unitDef.maxHp,
-          hunger: 0,
-          safety: 100,
-          strength: unitDef.strength,
-          visionRange: unitDef.visionRange,
-          moveSpeed: unitDef.moveSpeed,
-          state: 'idle'
-        }
-
-        state.units.set(unit.id, unit)
-
-        // Reveal fog around each unit
-        revealFog(fogMap, config.mapWidth, config.mapHeight, unitQ, unitR, unitDef.visionRange)
-      }
+      revealFog(fogMap, config.mapWidth, config.mapHeight, spawnPos.q, spawnPos.r, STARTING_GATHER_RADIUS + 1)
     }
-
-    // Initialize diplomacy between all player pairs
-    const playerIds = config.players.map(p => p.userId)
-    for (let i = 0; i < playerIds.length; i++) {
-      for (let j = i + 1; j < playerIds.length; j++) {
-        const diplomacy: DiplomacyState = {
-          player1Id: playerIds[i]!,
-          player2Id: playerIds[j]!,
-          status: 'peace'
-        }
-        state.diplomacy.push(diplomacy)
-      }
-    }
-
-    // Spawn neutral factions (animals and barbarians)
-    spawnInitialNeutrals(state)
 
     return new GameStateManager(state)
   }
 
   /**
    * Returns a fog-of-war filtered view of the game state for a specific player.
-   * The player sees their own units/settlements plus enemy units/settlements
+   * The player sees their own settlements plus enemy settlements
    * that are on tiles currently visible to them.
    */
   getPlayerView(userId: string): ClientPlayerState {
@@ -242,19 +127,6 @@ export class GameStateManager {
     }
 
     const fogMap = player.fogMap
-
-    // Collect all visible units: own units always visible + enemy units on visible tiles
-    const visibleUnits: GameUnit[] = []
-    for (const unit of this.state.units.values()) {
-      if (unit.ownerId === userId) {
-        visibleUnits.push(unit)
-      } else {
-        const tileIndex = unit.r * this.state.mapWidth + unit.q
-        if (tileIndex >= 0 && tileIndex < fogMap.length && fogMap[tileIndex] === FOG_VISIBLE) {
-          visibleUnits.push(unit)
-        }
-      }
-    }
 
     // Collect all visible settlements: own settlements always visible + enemy on visible tiles
     const visibleSettlements: GameSettlement[] = []
@@ -271,19 +143,11 @@ export class GameStateManager {
 
     return {
       tick: this.state.tick,
-      resources: player.resources,
-      resourceIncome: player.resourceIncome,
-      resourceUpkeep: player.resourceUpkeep,
-      policies: player.policies,
-      advisors: player.advisors,
-      currentResearch: player.currentResearch,
-      researchProgress: player.researchProgress,
-      researchedTechs: player.researchedTechs,
-      passedLaws: player.passedLaws,
-      visibleUnits,
+      factionId: player.factionId,
+      paused: this.state.paused,
+      speed: this.state.speed,
       visibleSettlements,
-      fogMap: Array.from(fogMap),
-      diplomacy: this.state.diplomacy
+      fogMap: Array.from(fogMap)
     }
   }
 }

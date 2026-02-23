@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Application, Container, Graphics, Sprite, Text, TextStyle } from 'pixi.js'
 import type { HexMapData } from '~/utils/hex-map-data'
+import type { ClientPlayerState, GameSettlement } from '../../shared/game-types'
 import { createHexTextureAtlas, type HexTextureAtlas } from '~/utils/hex-texture-atlas'
 import { createTilePool, type TilePool } from '~/utils/hex-tile-pool'
 import { createShadowPool, type ShadowPool } from '~/utils/hex-shadow'
@@ -8,9 +9,18 @@ import { createFeaturePool, type FeaturePool } from '~/utils/hex-feature-pool'
 import { createAnimationManager, type AnimationManager } from '~/utils/hex-animation-manager'
 import { createParticleTextures, type ParticleTextures } from '~/utils/hex-particle-textures'
 import { PARTICLE_CONFIGS } from '~/utils/hex-animation-config'
+import { createFogRenderer, type FogRenderer } from '~/utils/hex-fog-renderer'
+import { createSettlementRenderer, type SettlementRenderer } from '~/utils/hex-settlement-renderer'
 
 const props = defineProps<{
   mapData: HexMapData
+  playerState: ClientPlayerState | null
+  currentPlayerId: string
+}>()
+
+const emit = defineEmits<{
+  (e: 'select-settlement', settlement: GameSettlement): void
+  (e: 'deselect'): void
 }>()
 
 const containerRef = ref<HTMLDivElement>()
@@ -55,11 +65,19 @@ onMounted(async () => {
   const featurePool: FeaturePool = createFeaturePool()
   worldContainer.addChild(featurePool.container)
 
+  // Layer 4: fog of war (above features)
+  const fogRenderer: FogRenderer = createFogRenderer()
+  worldContainer.addChild(fogRenderer.container)
+
+  // Layer 5: settlement renderer (above fog)
+  const settlementRenderer: SettlementRenderer = createSettlementRenderer()
+  worldContainer.addChild(settlementRenderer.container)
+
   // Animation manager and particle textures
   const animationManager: AnimationManager = createAnimationManager()
   const particleTextures: ParticleTextures = createParticleTextures()
 
-  // Layer 4: particle container (above features)
+  // Layer 6: particle container (above settlements)
   const particleContainer = new Container()
   worldContainer.addChild(particleContainer)
 
@@ -72,7 +90,7 @@ onMounted(async () => {
     particleSprites.push(s)
   }
 
-  // Layer 5: LOD fallback graphics (hidden by default)
+  // Layer 7: LOD fallback graphics (hidden by default)
   const lodGraphics = new Graphics()
   lodGraphics.visible = false
   worldContainer.addChild(lodGraphics)
@@ -96,8 +114,46 @@ onMounted(async () => {
     props.mapData
   )
 
+  // --- Click handling for tile selection ---
+  let clickStartX = 0
+  let clickStartY = 0
+  const CLICK_THRESHOLD = 5 // pixels — ignore drags
+
+  const canvas = app.canvas as HTMLCanvasElement
+  canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+    clickStartX = e.clientX
+    clickStartY = e.clientY
+  })
+  canvas.addEventListener('pointerup', (e: PointerEvent) => {
+    const dx = e.clientX - clickStartX
+    const dy = e.clientY - clickStartY
+    if (Math.sqrt(dx * dx + dy * dy) > CLICK_THRESHOLD) return // was a drag
+
+    // Convert screen → world → hex
+    const rect = canvas.getBoundingClientRect()
+    const sx = e.clientX - rect.left
+    const sy = e.clientY - rect.top
+    const worldX = camera.x + (sx - app.screen.width / 2) / camera.zoom
+    const worldY = camera.y + (sy - app.screen.height / 2) / camera.zoom
+    const hex = pixelToHex(worldX, worldY)
+
+    const ps = props.playerState
+    if (!ps) return
+
+    // Check for settlement at this hex
+    const settlement = ps.visibleSettlements.find(s => s.q === hex.q && s.r === hex.r)
+    if (settlement) {
+      emit('select-settlement', settlement)
+      return
+    }
+
+    emit('deselect')
+  })
+
   let lastVisibleKey = ''
   let fpsUpdateTimer = 0
+  let lastPlayerStateTick = -1
+  let cameraCentered = false
 
   function redrawVisibleTiles() {
     const range = getVisibleRange(
@@ -111,7 +167,7 @@ onMounted(async () => {
     )
 
     const visibleKey = `${range.qMin},${range.qMax},${range.rMin},${range.rMax},${camera.zoom.toFixed(3)}`
-    if (visibleKey === lastVisibleKey) return
+    const viewChanged = visibleKey !== lastVisibleKey
     lastVisibleKey = visibleKey
 
     const useLod = camera.zoom < 0.25
@@ -121,19 +177,23 @@ onMounted(async () => {
       tilePool.tileContainer.visible = false
       shadowPool.container.visible = false
       featurePool.container.visible = false
+      fogRenderer.container.visible = false
+      settlementRenderer.container.visible = false
       lodGraphics.visible = true
 
-      lodGraphics.clear()
-      const rectW = HEX_SIZE * 1.5
-      const rectH = HEX_SIZE * SQRT3
+      if (viewChanged) {
+        lodGraphics.clear()
+        const rectW = HEX_SIZE * 1.5
+        const rectH = HEX_SIZE * SQRT3
 
-      for (let r = range.rMin; r <= range.rMax; r++) {
-        for (let q = range.qMin; q <= range.qMax; q++) {
-          const terrain = getTerrain(props.mapData, q, r)
-          const px = HEX_SIZE * 1.5 * q
-          const py = HEX_SIZE * (SQRT3 / 2 * q + SQRT3 * r)
-          lodGraphics.rect(px - rectW / 2, py - rectH / 2, rectW, rectH)
-          lodGraphics.fill({ color: TERRAIN_COLORS[terrain] })
+        for (let r = range.rMin; r <= range.rMax; r++) {
+          for (let q = range.qMin; q <= range.qMax; q++) {
+            const terrain = getTerrain(props.mapData, q, r)
+            const px = HEX_SIZE * 1.5 * q
+            const py = HEX_SIZE * (SQRT3 / 2 * q + SQRT3 * r)
+            lodGraphics.rect(px - rectW / 2, py - rectH / 2, rectW, rectH)
+            lodGraphics.fill({ color: TERRAIN_COLORS[terrain] })
+          }
         }
       }
     } else {
@@ -142,15 +202,48 @@ onMounted(async () => {
       shadowPool.container.visible = true
       lodGraphics.visible = false
 
-      tilePool.update(range, props.mapData, textureAtlas, camera.zoom)
-      shadowPool.update(range, props.mapData)
+      if (viewChanged) {
+        tilePool.update(range, props.mapData, textureAtlas, camera.zoom)
+        shadowPool.update(range, props.mapData)
+      }
 
       // Features visible at zoom >= 0.4
       if (camera.zoom >= 0.4) {
         featurePool.container.visible = true
-        featurePool.update(range, props.mapData)
+        if (viewChanged) {
+          featurePool.update(range, props.mapData)
+        }
       } else {
         featurePool.container.visible = false
+      }
+
+      // Game state layers
+      fogRenderer.container.visible = true
+      settlementRenderer.container.visible = true
+
+      // Update game state renderers when view changes or new tick arrives
+      const ps = props.playerState
+      if (ps) {
+        // Center camera on player's first settlement on first tick
+        if (!cameraCentered) {
+          cameraCentered = true
+          const target = ps.visibleSettlements[0]
+          if (target) {
+            const pos = hexToPixel(target.q, target.r)
+            camera.x = pos.x
+            camera.y = pos.y
+            // Force full redraw after camera move
+            lastVisibleKey = ''
+            return
+          }
+        }
+
+        const tickChanged = ps.tick !== lastPlayerStateTick
+        if (viewChanged || tickChanged) {
+          lastPlayerStateTick = ps.tick
+          fogRenderer.update(ps.fogMap, props.mapData.width, props.mapData.height, range)
+          settlementRenderer.update(ps.visibleSettlements, props.currentPlayerId)
+        }
       }
     }
   }
@@ -222,6 +315,8 @@ onMounted(async () => {
     destroyCamera()
     animationManager.particles.clear()
     particleTextures.destroy()
+    fogRenderer.destroy()
+    settlementRenderer.destroy()
     featurePool.destroy()
     shadowPool.destroy()
     tilePool.destroy()

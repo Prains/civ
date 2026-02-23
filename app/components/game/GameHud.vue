@@ -1,16 +1,5 @@
 <script setup lang="ts">
-interface ResourceValues {
-  food: number
-  production: number
-  gold: number
-  science: number
-  culture: number
-}
-
 defineProps<{
-  resources: ResourceValues
-  income: ResourceValues
-  upkeep: ResourceValues
   paused: boolean
   speed: number
   tick: number
@@ -26,15 +15,6 @@ const speedOptions = [0.5, 1, 2, 3]
 
 <template>
   <div class="absolute inset-0 pointer-events-none z-10">
-    <!-- Resource bar at top -->
-    <div class="pointer-events-auto">
-      <GameResourceBar
-        :resources="resources"
-        :income="income"
-        :upkeep="upkeep"
-      />
-    </div>
-
     <!-- Bottom controls -->
     <div class="absolute bottom-4 left-4 flex items-center gap-2 pointer-events-auto">
       <!-- Pause / Resume -->

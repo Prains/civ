@@ -21,7 +21,7 @@ describe('GameStateManager', () => {
     expect(manager.state.paused).toBe(false)
   })
 
-  it('creates starting units and settlement for each player', () => {
+  it('creates starting settlement for each player', () => {
     const manager = GameStateManager.create({
       gameId: 'test-game',
       mapWidth: 50,
@@ -32,29 +32,9 @@ describe('GameStateManager', () => {
       speed: 1
     })
 
-    const p1Units = [...manager.state.units.values()].filter(u => u.ownerId === 'p1')
-    expect(p1Units).toHaveLength(4) // 2 scouts + 1 gatherer + 1 builder
-
     const p1Settlements = [...manager.state.settlements.values()].filter(s => s.ownerId === 'p1')
     expect(p1Settlements).toHaveLength(1)
     expect(p1Settlements[0].isCapital).toBe(true)
-  })
-
-  it('initializes player resources', () => {
-    const manager = GameStateManager.create({
-      gameId: 'test-game',
-      mapWidth: 20,
-      mapHeight: 20,
-      terrain: new Uint8Array(400).fill(4),
-      elevation: new Uint8Array(400).fill(128),
-      players: [{ userId: 'p1', factionId: 'solar_empire' }],
-      speed: 1
-    })
-
-    const player = manager.state.players.get('p1')!
-    expect(player.resources.food).toBeGreaterThan(0)
-    expect(player.resources.gold).toBeGreaterThan(0)
-    expect(player.advisors).toHaveLength(5)
   })
 
   it('getPlayerView filters by fog of war', () => {
@@ -72,48 +52,9 @@ describe('GameStateManager', () => {
     })
 
     const p1View = manager.getPlayerView('p1')
-    // Should see own units but not necessarily all of p2's units
-    const ownUnits = p1View.visibleUnits.filter(u => u.ownerId === 'p1')
-    expect(ownUnits.length).toBeGreaterThan(0)
-  })
-
-  it('stores correct starting resources', () => {
-    const manager = GameStateManager.create({
-      gameId: 'test-game',
-      mapWidth: 20,
-      mapHeight: 20,
-      terrain: new Uint8Array(400).fill(4),
-      elevation: new Uint8Array(400).fill(128),
-      players: [{ userId: 'p1', factionId: 'solar_empire' }],
-      speed: 1
-    })
-
-    const player = manager.state.players.get('p1')!
-    expect(player.resources).toEqual({
-      food: 50,
-      production: 30,
-      gold: 30,
-      science: 0,
-      culture: 0
-    })
-  })
-
-  it('initializes advisors with faction-specific loyalty', () => {
-    const manager = GameStateManager.create({
-      gameId: 'test-game',
-      mapWidth: 20,
-      mapHeight: 20,
-      terrain: new Uint8Array(400).fill(4),
-      elevation: new Uint8Array(400).fill(128),
-      players: [{ userId: 'p1', factionId: 'solar_empire' }],
-      speed: 1
-    })
-
-    const player = manager.state.players.get('p1')!
-    const general = player.advisors.find(a => a.type === 'general')!
-    expect(general.loyalty).toBe(70) // solar_empire general starts at 70
-    const priest = player.advisors.find(a => a.type === 'priest')!
-    expect(priest.loyalty).toBe(40) // solar_empire priest starts at 40
+    // Should see own settlement
+    const ownSettlements = p1View.visibleSettlements.filter(s => s.ownerId === 'p1')
+    expect(ownSettlements.length).toBeGreaterThan(0)
   })
 
   it('creates fog map initialized around starting positions', () => {
@@ -196,27 +137,6 @@ describe('GameStateManager', () => {
     expect(settlement.r).toBeLessThanOrEqual(12)
   })
 
-  it('creates correct unit types for starting units', () => {
-    const manager = GameStateManager.create({
-      gameId: 'test-game',
-      mapWidth: 50,
-      mapHeight: 50,
-      terrain: new Uint8Array(2500).fill(4),
-      elevation: new Uint8Array(2500).fill(128),
-      players: [{ userId: 'p1', factionId: 'solar_empire' }],
-      speed: 1
-    })
-
-    const p1Units = [...manager.state.units.values()].filter(u => u.ownerId === 'p1')
-    const scouts = p1Units.filter(u => u.type === 'scout')
-    const gatherers = p1Units.filter(u => u.type === 'gatherer')
-    const builders = p1Units.filter(u => u.type === 'builder')
-
-    expect(scouts).toHaveLength(2)
-    expect(gatherers).toHaveLength(1)
-    expect(builders).toHaveLength(1)
-  })
-
   it('sets correct game metadata', () => {
     const manager = GameStateManager.create({
       gameId: 'test-game-123',
@@ -236,46 +156,6 @@ describe('GameStateManager', () => {
     expect(manager.state.elevation.length).toBe(750)
   })
 
-  it('initializes empty improvements and spawns neutral factions', () => {
-    const manager = GameStateManager.create({
-      gameId: 'test-game',
-      mapWidth: 20,
-      mapHeight: 20,
-      terrain: new Uint8Array(400).fill(4),
-      elevation: new Uint8Array(400).fill(128),
-      players: [{ userId: 'p1', factionId: 'solar_empire' }],
-      speed: 1
-    })
-
-    expect(manager.state.improvements.size).toBe(0)
-    // Neutral units and barbarian camps are populated by spawnInitialNeutrals
-    // On a small all-grassland map: no animals (no forest tiles), but barbarian camps may spawn
-    expect(manager.state.neutralUnits.size).toBeGreaterThanOrEqual(0)
-    expect(manager.state.barbarianCamps.length).toBeGreaterThanOrEqual(0)
-  })
-
-  it('initializes diplomacy as peace between all players', () => {
-    const manager = GameStateManager.create({
-      gameId: 'test-game',
-      mapWidth: 50,
-      mapHeight: 50,
-      terrain: new Uint8Array(2500).fill(4),
-      elevation: new Uint8Array(2500).fill(128),
-      players: [
-        { userId: 'p1', factionId: 'solar_empire' },
-        { userId: 'p2', factionId: 'merchant_league' },
-        { userId: 'p3', factionId: 'forest_keepers' }
-      ],
-      speed: 1
-    })
-
-    // 3 players = 3 pairs of diplomacy
-    expect(manager.state.diplomacy).toHaveLength(3)
-    for (const d of manager.state.diplomacy) {
-      expect(d.status).toBe('peace')
-    }
-  })
-
   it('getPlayerView returns correct client state shape', () => {
     const manager = GameStateManager.create({
       gameId: 'test-game',
@@ -289,19 +169,11 @@ describe('GameStateManager', () => {
 
     const view = manager.getPlayerView('p1')
     expect(view.tick).toBe(0)
-    expect(view.resources).toBeDefined()
-    expect(view.resourceIncome).toBeDefined()
-    expect(view.resourceUpkeep).toBeDefined()
-    expect(view.policies).toBeDefined()
-    expect(view.advisors).toBeDefined()
-    expect(view.currentResearch).toBeNull()
-    expect(view.researchProgress).toBe(0)
-    expect(view.researchedTechs).toEqual([])
-    expect(view.passedLaws).toEqual([])
-    expect(view.visibleUnits).toBeInstanceOf(Array)
+    expect(view.factionId).toBe('solar_empire')
+    expect(view.paused).toBe(false)
+    expect(view.speed).toBe(1)
     expect(view.visibleSettlements).toBeInstanceOf(Array)
     expect(view.fogMap).toBeInstanceOf(Array)
-    expect(view.diplomacy).toBeInstanceOf(Array)
   })
 
   it('getPlayerView includes own settlements', () => {
@@ -320,27 +192,7 @@ describe('GameStateManager', () => {
     expect(ownSettlements).toHaveLength(1)
   })
 
-  it('units have correct stats from unit definitions', () => {
-    const manager = GameStateManager.create({
-      gameId: 'test-game',
-      mapWidth: 50,
-      mapHeight: 50,
-      terrain: new Uint8Array(2500).fill(4),
-      elevation: new Uint8Array(2500).fill(128),
-      players: [{ userId: 'p1', factionId: 'solar_empire' }],
-      speed: 1
-    })
-
-    const scout = [...manager.state.units.values()].find(u => u.type === 'scout')!
-    expect(scout.maxHp).toBe(50)
-    expect(scout.hp).toBe(50)
-    expect(scout.strength).toBe(2)
-    expect(scout.visionRange).toBe(4)
-    expect(scout.moveSpeed).toBe(2)
-    expect(scout.state).toBe('idle')
-  })
-
-  it('settlement has correct stats from settlement definitions', () => {
+  it('settlement has correct stats', () => {
     const manager = GameStateManager.create({
       gameId: 'test-game',
       mapWidth: 50,
@@ -352,12 +204,8 @@ describe('GameStateManager', () => {
     })
 
     const settlement = [...manager.state.settlements.values()].find(s => s.ownerId === 'p1')!
-    expect(settlement.tier).toBe('outpost')
-    expect(settlement.maxHp).toBe(100)
-    expect(settlement.hp).toBe(100)
-    expect(settlement.defense).toBe(5)
-    expect(settlement.buildingSlots).toBe(2)
     expect(settlement.gatherRadius).toBe(2)
-    expect(settlement.buildings).toEqual([])
+    expect(settlement.isCapital).toBe(true)
+    expect(settlement.name).toBeTruthy()
   })
 })

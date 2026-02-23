@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { tickFog, revealTiles } from '../../server/game/systems/fog-system'
-import type { GameState, GamePlayer, GameUnit, GameSettlement } from '../../shared/game-types'
+import type { GameState, GamePlayer, GameSettlement } from '../../shared/game-types'
 
 // --- Helpers ---
 
@@ -12,35 +12,7 @@ function createPlayer(userId: string, fogMap: Uint8Array): GamePlayer {
   return {
     userId,
     factionId: 'solar_empire',
-    resources: { food: 0, production: 0, gold: 0, science: 0, culture: 0 },
-    resourceIncome: { food: 0, production: 0, gold: 0, science: 0, culture: 0 },
-    resourceUpkeep: { food: 0, production: 0, gold: 0, science: 0, culture: 0 },
-    policies: { aggression: 50, expansion: 50, spending: 50, combatPolicy: 'defensive' },
-    advisors: [],
-    researchedTechs: [],
-    currentResearch: null,
-    researchProgress: 0,
-    passedLaws: [],
-    eliminated: false,
     fogMap
-  }
-}
-
-function createUnit(id: string, ownerId: string, q: number, r: number, visionRange: number, type: GameUnit['type'] = 'scout'): GameUnit {
-  return {
-    id,
-    type,
-    ownerId,
-    q,
-    r,
-    hp: 50,
-    maxHp: 50,
-    hunger: 0,
-    safety: 100,
-    strength: 2,
-    visionRange,
-    moveSpeed: 1,
-    state: 'idle'
   }
 }
 
@@ -49,16 +21,10 @@ function createSettlement(id: string, ownerId: string, q: number, r: number, gat
     id,
     ownerId,
     name: 'TestTown',
-    tier: 'outpost',
     q,
     r,
-    buildings: [],
-    buildingSlots: 2,
     gatherRadius,
-    isCapital: true,
-    hp: 100,
-    maxHp: 100,
-    defense: 5
+    isCapital: true
   }
 }
 
@@ -72,13 +38,8 @@ function createMinimalGameState(overrides: Partial<GameState> = {}): GameState {
     mapHeight: 20,
     terrain: new Uint8Array(400).fill(4),
     elevation: new Uint8Array(400).fill(128),
-    improvements: new Map(),
     players: new Map(),
-    units: new Map(),
     settlements: new Map(),
-    diplomacy: [],
-    neutralUnits: new Map(),
-    barbarianCamps: [],
     ...overrides
   }
 }
@@ -143,37 +104,6 @@ describe('revealTiles', () => {
 })
 
 describe('tickFog', () => {
-  it('unit at (5,5) with vision 2 reveals surrounding tiles', () => {
-    const width = 20
-    const height = 20
-    const fogMap = createFogMap(width, height, 0)
-    const player = createPlayer('p1', fogMap)
-    const unit = createUnit('u1', 'p1', 5, 5, 2)
-
-    const state = createMinimalGameState({
-      mapWidth: width,
-      mapHeight: height,
-      players: new Map([['p1', player]]),
-      units: new Map([['u1', unit]])
-    })
-
-    tickFog(state)
-
-    // Center tile visible
-    expect(getFog(fogMap, 5, 5, width)).toBe(2)
-    // Tiles within range 2
-    expect(getFog(fogMap, 5, 3, width)).toBe(2) // distance 2
-    expect(getFog(fogMap, 5, 7, width)).toBe(2) // distance 2
-    expect(getFog(fogMap, 3, 5, width)).toBe(2) // distance 2
-    expect(getFog(fogMap, 7, 5, width)).toBe(2) // distance 2
-    // Diagonals at sqrt(2) ~ 1.41
-    expect(getFog(fogMap, 6, 6, width)).toBe(2)
-    expect(getFog(fogMap, 4, 4, width)).toBe(2)
-    // Tiles just outside range
-    expect(getFog(fogMap, 5, 2, width)).toBe(0) // distance 3
-    expect(getFog(fogMap, 8, 5, width)).toBe(0) // distance 3
-  })
-
   it('settlement at (10,10) with gather radius 3 grants vision', () => {
     const width = 20
     const height = 20
@@ -216,66 +146,29 @@ describe('tickFog', () => {
     // Tile (19,19) stays unexplored (0)
 
     const player = createPlayer('p1', fogMap)
-    // Place unit far from (0,0) and (1,0) so those tiles are not re-revealed
-    const unit = createUnit('u1', 'p1', 10, 10, 1)
+    // Place settlement far from (0,0) and (1,0) so those tiles are not re-revealed
+    const settlement = createSettlement('s1', 'p1', 10, 10, 1)
 
     const state = createMinimalGameState({
       mapWidth: width,
       mapHeight: height,
       players: new Map([['p1', player]]),
-      units: new Map([['u1', unit]])
+      settlements: new Map([['s1', settlement]])
     })
 
     tickFog(state)
 
-    // Previously visible tile (1,0) should now be explored (1), since no unit is nearby
+    // Previously visible tile (1,0) should now be explored (1), since no settlement is nearby
     expect(getFog(fogMap, 1, 0, width)).toBe(1)
     // Previously explored tile (0,0) should remain explored (1)
     expect(getFog(fogMap, 0, 0, width)).toBe(1)
     // Unexplored tile (19,19) should remain unexplored (0)
     expect(getFog(fogMap, 19, 19, width)).toBe(0)
-    // Tile around unit at (10,10) should be visible
+    // Tile around settlement at (10,10) should be visible
     expect(getFog(fogMap, 10, 10, width)).toBe(2)
   })
 
-  it('scout has vision 4 tiles, warrior has vision 2 tiles', () => {
-    const width = 20
-    const height = 20
-    const fogMap = createFogMap(width, height, 0)
-    const player = createPlayer('p1', fogMap)
-
-    // Scout at (5,10) with vision 4
-    const scout = createUnit('scout1', 'p1', 5, 10, 4, 'scout')
-    // Warrior at (15,10) with vision 2
-    const warrior = createUnit('warrior1', 'p1', 15, 10, 2, 'warrior')
-
-    const state = createMinimalGameState({
-      mapWidth: width,
-      mapHeight: height,
-      players: new Map([['p1', player]]),
-      units: new Map([['scout1', scout], ['warrior1', warrior]])
-    })
-
-    tickFog(state)
-
-    // Scout can see 4 tiles away
-    expect(getFog(fogMap, 5, 6, width)).toBe(2) // distance 4 from (5,10)
-    expect(getFog(fogMap, 5, 14, width)).toBe(2) // distance 4 from (5,10)
-    expect(getFog(fogMap, 9, 10, width)).toBe(2) // distance 4 from (5,10)
-    expect(getFog(fogMap, 1, 10, width)).toBe(2) // distance 4 from (5,10)
-    // Scout cannot see 5 tiles away
-    expect(getFog(fogMap, 5, 5, width)).toBe(0) // distance 5 from (5,10)
-    expect(getFog(fogMap, 10, 10, width)).toBe(0) // distance 5 from (5,10)
-
-    // Warrior can see 2 tiles away
-    expect(getFog(fogMap, 15, 8, width)).toBe(2) // distance 2 from (15,10)
-    expect(getFog(fogMap, 17, 10, width)).toBe(2) // distance 2 from (15,10)
-    // Warrior cannot see 3 tiles away
-    expect(getFog(fogMap, 15, 7, width)).toBe(0) // distance 3 from (15,10)
-    expect(getFog(fogMap, 18, 10, width)).toBe(0) // distance 3 from (15,10)
-  })
-
-  it('only own units/settlements grant vision (not enemies)', () => {
+  it('only own settlements grant vision (not enemies)', () => {
     const width = 20
     const height = 20
     const fogMapP1 = createFogMap(width, height, 0)
@@ -283,16 +176,16 @@ describe('tickFog', () => {
     const player1 = createPlayer('p1', fogMapP1)
     const player2 = createPlayer('p2', fogMapP2)
 
-    // P1 has a unit at (5,5)
-    const unitP1 = createUnit('u1', 'p1', 5, 5, 2)
-    // P2 has a unit at (15,15)
-    const unitP2 = createUnit('u2', 'p2', 15, 15, 2)
+    // P1 has a settlement at (5,5)
+    const settlementP1 = createSettlement('s1', 'p1', 5, 5, 2)
+    // P2 has a settlement at (15,15)
+    const settlementP2 = createSettlement('s2', 'p2', 15, 15, 2)
 
     const state = createMinimalGameState({
       mapWidth: width,
       mapHeight: height,
       players: new Map([['p1', player1], ['p2', player2]]),
-      units: new Map([['u1', unitP1], ['u2', unitP2]])
+      settlements: new Map([['s1', settlementP1], ['s2', settlementP2]])
     })
 
     tickFog(state)
@@ -306,88 +199,28 @@ describe('tickFog', () => {
     expect(getFog(fogMapP2, 5, 5, width)).toBe(0)
   })
 
-  it('skips eliminated players', () => {
-    const width = 20
-    const height = 20
-    const fogMap = createFogMap(width, height, 0)
-    // Set some tiles to visible so we can check they get left alone
-    fogMap[5 * width + 5] = 2
-
-    const player = createPlayer('p1', fogMap)
-    player.eliminated = true
-
-    const unit = createUnit('u1', 'p1', 10, 10, 2)
-
-    const state = createMinimalGameState({
-      mapWidth: width,
-      mapHeight: height,
-      players: new Map([['p1', player]]),
-      units: new Map([['u1', unit]])
-    })
-
-    tickFog(state)
-
-    // Fog should NOT be reset or updated for eliminated player
-    // The previously visible tile should remain visible (not reset to explored)
-    expect(getFog(fogMap, 5, 5, width)).toBe(2)
-    // The unit's position should NOT be revealed (eliminated player skipped)
-    expect(getFog(fogMap, 10, 10, width)).toBe(0)
-  })
-
-  it('combines vision from multiple units and settlements', () => {
+  it('combines vision from multiple settlements', () => {
     const width = 20
     const height = 20
     const fogMap = createFogMap(width, height, 0)
     const player = createPlayer('p1', fogMap)
 
-    const unit = createUnit('u1', 'p1', 3, 3, 2)
-    const settlement = createSettlement('s1', 'p1', 15, 15, 3)
+    const settlement1 = createSettlement('s1', 'p1', 3, 3, 2)
+    const settlement2 = createSettlement('s2', 'p1', 15, 15, 3)
 
     const state = createMinimalGameState({
       mapWidth: width,
       mapHeight: height,
       players: new Map([['p1', player]]),
-      units: new Map([['u1', unit]]),
-      settlements: new Map([['s1', settlement]])
+      settlements: new Map([['s1', settlement1], ['s2', settlement2]])
     })
 
     tickFog(state)
 
     // Both areas should be visible
-    expect(getFog(fogMap, 3, 3, width)).toBe(2) // unit center
-    expect(getFog(fogMap, 15, 15, width)).toBe(2) // settlement center
-    expect(getFog(fogMap, 4, 4, width)).toBe(2) // near unit
-    expect(getFog(fogMap, 16, 16, width)).toBe(2) // near settlement
-  })
-
-  it('maintains explored status across multiple ticks as units move', () => {
-    const width = 20
-    const height = 20
-    const fogMap = createFogMap(width, height, 0)
-    const player = createPlayer('p1', fogMap)
-
-    // First tick: unit at (5,5)
-    const unit = createUnit('u1', 'p1', 5, 5, 2)
-
-    const state = createMinimalGameState({
-      mapWidth: width,
-      mapHeight: height,
-      players: new Map([['p1', player]]),
-      units: new Map([['u1', unit]])
-    })
-
-    tickFog(state)
-    expect(getFog(fogMap, 5, 5, width)).toBe(2) // visible
-
-    // Move unit to (10,10)
-    unit.q = 10
-    unit.r = 10
-
-    tickFog(state)
-
-    // Old position should be explored (1), not visible (2)
-    expect(getFog(fogMap, 5, 5, width)).toBe(1)
-    // New position should be visible
-    expect(getFog(fogMap, 10, 10, width)).toBe(2)
+    expect(getFog(fogMap, 3, 3, width)).toBe(2) // settlement 1 center
+    expect(getFog(fogMap, 15, 15, width)).toBe(2) // settlement 2 center
+    expect(getFog(fogMap, 4, 4, width)).toBe(2) // near settlement 1
+    expect(getFog(fogMap, 16, 16, width)).toBe(2) // near settlement 2
   })
 })
